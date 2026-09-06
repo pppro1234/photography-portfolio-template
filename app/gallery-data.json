@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "src": "/gallery/sample-01-horizon.jpg",
+    "width": 1440,
+    "height": 900,
+    "title": "Sample 01 Horizon",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": true
+  },
+  {
+    "id": 2,
+    "src": "/gallery/sample-02-light.jpg",
+    "width": 900,
+    "height": 1200,
+    "title": "Sample 02 Light",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": false
+  },
+  {
+    "id": 3,
+    "src": "/gallery/sample-03-form.jpg",
+    "width": 900,
+    "height": 1200,
+    "title": "Sample 03 Form",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": false
+  },
+  {
+    "id": 4,
+    "src": "/gallery/sample-04-space.jpg",
+    "width": 900,
+    "height": 1200,
+    "title": "Sample 04 Space",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": false
+  },
+  {
+    "id": 5,
+    "src": "/gallery/sample-05-shadow.jpg",
+    "width": 900,
+    "height": 1200,
+    "title": "Sample 05 Shadow",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": false
+  },
+  {
+    "id": 6,
+    "src": "/gallery/sample-06-stillness.jpg",
+    "width": 1440,
+    "height": 900,
+    "title": "Sample 06 Stillness",
+    "category": "Photography",
+    "description": "",
+    "thumbPosition": "center",
+    "isWide": true
+  }
+]

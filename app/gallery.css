@@ -1,0 +1,55 @@
+.gallery-layout {
+  container-type: inline-size;
+}
+
+.gallery-grid {
+  --gallery-gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gallery-gap);
+}
+
+.gallery-card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 3 / 4;
+}
+
+.gallery-card-wide {
+  grid-column: span 2;
+  aspect-ratio: 16 / 10;
+}
+
+.gallery-image {
+  position: absolute;
+  inset: -3% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    --gallery-gap: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    --gallery-gap: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* One shared row height: a portrait spans one column at a 3:4 ratio. */
+    grid-auto-rows: calc(100cqw / 3 - var(--gallery-gap));
+  }
+
+  .gallery-card {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
