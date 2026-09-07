@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_OPEN_DURATION, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../app/lib/navigation-motion.mjs";
+import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_HOVER_DELAY, NAV_OPEN_DURATION, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../app/lib/navigation-motion.mjs";
 
 test("Work, Contact and mobile About use the same navigation typography", () => {
   const css = readFileSync(new URL("../app/navigation.css", import.meta.url), "utf8");
@@ -140,6 +140,38 @@ test("hover waits 120ms and quick crossings select only the last intended menu",
   assert.equal(clock.pending.size, 1);
   clock.flush();
   assert.deepEqual(selected, ["contact"]);
+});
+
+test("default hover timers retain the browser global receiver", () => {
+  const originals = { setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout };
+  let pending;
+  let cancellations = 0;
+  const selected = [];
+  globalThis.setTimeout = function (callback, delay) {
+    assert.equal(this, globalThis, "native browser timers cannot use the injected clock as their receiver");
+    assert.equal(delay, NAV_HOVER_DELAY);
+    pending = callback;
+    return 1;
+  };
+  globalThis.clearTimeout = function (id) {
+    assert.equal(this, globalThis);
+    assert.equal(id, 1);
+    pending = undefined;
+    cancellations++;
+  };
+  try {
+    const intent = createHoverIntent((menu) => selected.push(menu));
+    intent.schedule("work");
+    intent.schedule("contact");
+    assert.equal(cancellations, 1);
+    pending();
+    assert.deepEqual(selected, ["contact"]);
+    intent.schedule("work");
+    intent.cancel();
+    assert.equal(pending, undefined);
+  } finally {
+    Object.assign(globalThis, originals);
+  }
 });
 
 test("pointer exit, Escape, navigation and unmount can cancel a queued hover", () => {

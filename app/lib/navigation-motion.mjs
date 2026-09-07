@@ -35,7 +35,11 @@ export function navigationReducer(state, action) {
   return state;
 }
 
-export function createHoverIntent(onIntent, timers = { setTimeout, clearTimeout }) {
+export function createHoverIntent(onIntent, timers = {
+  // Browser timers require their Window receiver, not this injected clock object.
+  setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
+  clearTimeout: (timer) => globalThis.clearTimeout(timer),
+}) {
   let timer;
   const cancel = () => {
     if (timer !== undefined) timers.clearTimeout(timer);
