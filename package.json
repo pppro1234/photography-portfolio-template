@@ -11,7 +11,8 @@
     "gallery:sync": "node scripts/sync-gallery.mjs",
     "check": "node --test scripts/check-*.mjs",
     "prebuild": "npm run gallery:sync",
-    "build": "next build",
+    "build": "next build --webpack",
+    "postbuild": "node scripts/verify-production-styles.mjs",
     "start": "next start"
   },
   "dependencies": {

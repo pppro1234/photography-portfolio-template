@@ -113,7 +113,7 @@ npm run build
 npm start
 ```
 
-如果默认构建器在受限制的运行环境中提示端口权限错误，可以使用 `npm run build -- --webpack` 构建，再执行 `npm start`。
+`npm run build` 已统一使用 Webpack，预览与线上采用相同构建方式。构建后自动检查首页和 About 实际链接的 CSS，确认桌面／手机导航高度、面板展开和 About 响应式布局完整；缺失时会阻止发布。构建成功后可执行 `npm start` 预览。
 
 构建成功后，把自己的仓库导入支持 Next.js 的托管平台（例如 Vercel），选择 Next.js 项目并发布。发布后可按平台指引绑定自己的域名。
 
