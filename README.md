@@ -6,13 +6,35 @@
 
 ## 1. 创建自己的项目
 
-在本仓库页面点击 **Use this template → Create a new repository**，使用你自己的 GitHub 账号创建仓库。然后下载或克隆你新建的仓库。
+如果希望以后接收模板更新，请在本仓库页面点击右上角 **Fork**，在自己的 GitHub 账号下创建 Fork，然后下载或克隆这个 Fork。Fork 会保留与本模板的关联，后续同步最省事。
+
+如果只想复制当前版本，并且以后不需要接收模板更新，可以点击 **Use this template → Create a new repository**。这种方式创建的是独立仓库，GitHub 不会保留可同步关系。
 
 本模板仓库为私有仓库，需要先让仓库所有者邀请你的 GitHub 账号，接受邀请后才能访问和使用。使用说明也可参考 [GitHub 官方模板文档](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)。
 
-也可以点击 **Code → Download ZIP**，解压后使用。
+也可以点击 **Code → Download ZIP**，解压后使用；ZIP 同样不会保留可同步关系。
 
-## 2. 启动预览
+## 2. 同步模板的后续更新
+
+此功能仅适用于通过 **Fork** 创建的项目。
+
+1. 打开你自己的 Fork 仓库页面。
+2. 点击文件列表上方的 **Sync fork**。
+3. 查看更新内容，然后点击 **Update branch**。
+4. 拉取自己仓库的最新版本，在本地运行 `npm ci` 和 `npm run build` 检查。
+
+为了尽量避免冲突，把个人内容放在模板专门提供的文件里：
+
+- 名称和简介：`app/site-config.json`
+- 社交账号：`app/social-profiles.json`
+- 照片：`public/gallery/`
+- 照片标题、说明和顺序：`app/gallery-data.json`
+
+模板维护者发布框架更新时，应尽量不改动这些个人内容文件。使用者如果修改 `app/page.js`、组件或样式文件，将来同步相同位置的更新时可能需要手动处理冲突。GitHub 遇到冲突时会提示创建 Pull Request 处理，不会直接覆盖使用者的改动。
+
+详细步骤可参考 [GitHub 官方同步 Fork 文档](https://docs.github.com/en/pull-requests/how-tos/work-with-forks/syncing-a-fork)。
+
+## 3. 启动预览
 
 安装 Node.js 20.9 或以上版本（推荐当前仍受支持的 LTS 版本）。在项目文件夹打开终端，执行：
 
@@ -25,7 +47,7 @@ npm run dev
 
 本模板无需数据库、API 密钥或环境变量即可运行。
 
-## 3. 替换成你的名字和内容
+## 4. 替换成你的名字和内容
 
 编辑 `app/site-config.json`：
 
@@ -55,7 +77,7 @@ npm run dev
 
 填入完整的 `https://` 主页链接；留空的平台会自动隐藏。所有链接留空时，联系入口也会隐藏。
 
-## 4. 添加照片
+## 5. 添加照片
 
 1. 删除 `public/gallery/` 内的 `sample-*.jpg` 占位图，放入自己的照片。支持 JPG、JPEG、PNG、WebP，也支持子文件夹。建议使用有含义的文件名。
 2. 执行 `npm run gallery:sync`，自动读取图片尺寸、判断横竖图并生成清单。
@@ -67,7 +89,7 @@ npm run dev
 
 不要把原相机文件直接用于网页。建议先导出适合网页的压缩版本，并移除不想公开的照片位置等元数据。
 
-## 5. 检查并上线
+## 6. 检查并上线
 
 ```bash
 npm run build
