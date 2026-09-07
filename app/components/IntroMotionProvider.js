@@ -4,6 +4,7 @@ import { createContext, useContext, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import { clampProgress, collapseEasing, getBrandTransform, getIntroGeometry, getNavigationReveal, INTRO_SPRING, smoothStep } from "../lib/intro-motion.mjs";
+import { MOTION_BLUR, motionBlur } from "../lib/motion-tokens.mjs";
 
 const IntroMotionContext = createContext(null);
 
@@ -26,6 +27,7 @@ export default function IntroMotionProvider({ children }) {
     getNavigationReveal(scroll, bounds, menu)
   );
   const navigationY = useTransform(navigationOpacity, (progress) => 4 * (1 - progress));
+  const navigationBlur = useTransform(navigationOpacity, (progress) => motionBlur(MOTION_BLUR.content, 1 - progress));
   const navigationVisibility = useTransform(navigationOpacity, (progress) => progress > 0 ? "visible" : "hidden");
   const navigationInteractive = useTransform(navigationOpacity, (progress) => progress >= 0.5);
   const navigationPointerEvents = useTransform(navigationInteractive, (interactive) => interactive ? "auto" : "none");
@@ -46,7 +48,7 @@ export default function IntroMotionProvider({ children }) {
     -8 * clampProgress(scroll / bounds.distance / 0.6)
   );
   const subtitleBlur = useTransform([activeScroll, geometry], ([scroll, bounds]) =>
-    `blur(${3 * clampProgress(scroll / bounds.distance / 0.6)}px)`
+    motionBlur(MOTION_BLUR.content, clampProgress(scroll / bounds.distance / 0.6))
   );
   const surfaceOpacity = useTransform([activeScroll, geometry, activeMenu], ([scroll, bounds, menu]) =>
     bounds.scrollable === false ? 1 : Math.max(smoothStep(clampProgress((scroll / bounds.distance - 0.4) / 0.6)), clampProgress(menu))
@@ -95,7 +97,7 @@ export default function IntroMotionProvider({ children }) {
   }, [pathname, geometry, scrollY, smoothScroll]);
 
   return (
-    <IntroMotionContext.Provider value={{ brandTransform, titleTransform, subtitleOpacity, subtitleY, subtitleBlur, surfaceOpacity, navigationOpacity, navigationY, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion }}>
+    <IntroMotionContext.Provider value={{ brandTransform, titleTransform, subtitleOpacity, subtitleY, subtitleBlur, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion }}>
       {children}
     </IntroMotionContext.Provider>
   );

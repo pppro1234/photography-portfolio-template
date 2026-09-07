@@ -10,6 +10,7 @@ import { galleryCategories, getCategoryHref } from "../lib/gallery-categories.mj
 import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../lib/navigation-motion.mjs";
 import { site, contactLinks } from "../lib/site-content";
 import { MOTION_DURATION } from "../lib/motion-tokens.mjs";
+import ThemeSwitch from "./ThemeSwitch";
 
 const workLinks = [{ slug: "all", label: "All work" }, ...galleryCategories];
 const hasContacts = contactLinks.length > 0;
@@ -23,7 +24,7 @@ const panelIds = { work: "work-navigation", contact: "contact-navigation", mobil
 export default function SiteHeader() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const { brandTransform, surfaceOpacity, navigationOpacity, navigationY, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion } = useIntroMotion();
+  const { brandTransform, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion } = useIntroMotion();
   const [navigationReady, setNavigationReady] = useState(() => navigationInteractive.get());
   const [{ menu, phase }, dispatch] = useReducer(navigationReducer, initialNavigationState);
   const [geometry, setGeometry] = useState({ height: 0, duration: MOTION_DURATION.control });
@@ -212,9 +213,10 @@ export default function SiteHeader() {
               aria-hidden={isMobileOpen || undefined} tabIndex={isMobileOpen ? -1 : undefined}
               onPointerEnter={(event) => { if (event.pointerType === "mouse") closeMenu(); }}>{site.name}</Link>
           )}
-          <motion.div className="site-nav-controls" inert={isHome && !navigationReady} aria-hidden={isHome && !navigationReady || undefined} style={{
+          <motion.div className="site-nav-controls motion-blur-content" inert={isHome && !navigationReady} aria-hidden={isHome && !navigationReady || undefined} style={{
             opacity: isHome ? navigationOpacity : 1,
             y: isHome && !shouldReduceMotion ? navigationY : 0,
+            filter: isHome && !shouldReduceMotion ? navigationBlur : "none",
             visibility: isHome ? navigationVisibility : "visible",
             pointerEvents: isHome ? navigationPointerEvents : "auto",
           }}>
@@ -226,6 +228,7 @@ export default function SiteHeader() {
               {hasContacts && <button type="button" className="nav-item" aria-expanded={menu === "contact"} aria-controls={panelIds.contact}
                 onPointerEnter={(event) => enterMenu("contact", event)} onClick={(event) => selectMenu("contact", event)} onKeyDown={(event) => openWithKeyboard("contact", event)}><span className="nav-item-label">Contact</span></button>}
             </nav>
+            <ThemeSwitch onInteract={() => hoverIntent.cancel()} />
             <button type="button" className="mobile-menu-toggle" aria-label={isMobileOpen ? "Close navigation" : "Open navigation"}
               aria-expanded={isMobileOpen} aria-controls={panelIds.mobile} onClick={(event) => {
                 hoverIntent.cancel();

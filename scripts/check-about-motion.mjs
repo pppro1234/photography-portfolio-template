@@ -9,10 +9,10 @@ test("About uses personal content and the shared social configuration", () => {
   assert.ok(page.includes("contactLinks.map"));
 });
 
-test("About text fades in with only a small upward movement", () => {
+test("About text fades in with a small upward movement and shared content blur", () => {
   const animation = getAboutRevealAnimation();
-  assert.deepEqual(animation.hidden, { opacity: 0, y: 10 });
-  assert.deepEqual(animation.visible, { opacity: 1, y: 0 });
+  assert.deepEqual(animation.hidden, { opacity: 0, y: 10, filter: "blur(3px)" });
+  assert.deepEqual(animation.visible, { opacity: 1, y: 0, filter: "none" });
   assert.equal(animation.transition.duration, 0.6);
 });
 

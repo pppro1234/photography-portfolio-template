@@ -15,15 +15,15 @@ export default function Intro({ home = false, title, description = site.tagline 
       </div>
       {!home && (
         <div className="pointer-events-none fixed inset-x-0 top-0 z-40 w-full max-w-[1400px] mx-auto px-4 md:px-8">
-          <motion.h1 style={{ transform: titleTransform, opacity: subtitleOpacity }}
-            className="work-heading w-fit origin-top-left text-2xl leading-8 md:text-3xl md:leading-9">
+          <motion.h1 style={{ transform: titleTransform, opacity: subtitleOpacity, filter: shouldReduceMotion ? "none" : subtitleBlur }}
+            className="work-heading motion-blur-content w-fit origin-top-left text-2xl leading-8 md:text-3xl md:leading-9">
             {title}
           </motion.h1>
         </div>
       )}
       <section className="relative w-full max-w-[1400px] mx-auto px-4 pt-3 pb-8 md:px-8 md:pb-10">
         <motion.p style={{ opacity: subtitleOpacity, y: shouldReduceMotion ? 0 : subtitleY, filter: shouldReduceMotion ? "none" : subtitleBlur }}
-          className="intro-tagline text-base font-light text-neutral-500 max-w-xl leading-6">
+          className="intro-tagline motion-blur-content text-base font-light max-w-xl leading-6">
           {description}
         </motion.p>
       </section>

@@ -4,6 +4,7 @@ import test from "node:test";
 import { getSocialLinks } from "../app/lib/social-platforms.mjs";
 import { resolveAboutContent } from "../app/lib/about-content.mjs";
 import { filterGalleryImages, galleryCategories } from "../app/lib/gallery-categories.mjs";
+import { THEME_STORAGE_KEY } from "../app/lib/color-theme.mjs";
 
 const source = (file) => readFileSync(new URL(`../app/${file}`, import.meta.url), "utf8");
 
@@ -63,4 +64,12 @@ test("framework contains no upstream photographer identity or fixed personal pic
   const files = ["layout.js", "about/page.js", "work/[category]/page.js", ...readdirSync(new URL("../app/components/", import.meta.url)).map((name) => `components/${name}`)];
   for (const file of files) assert.doesNotMatch(source(file), /PPPRO STUDIO|pppro\.studio|gallery\/norway\.jpg/);
   assert.match(source("components/Footer.js"), /new Date\(\).getFullYear\(\)/);
+});
+
+test("theme preferences and empty-gallery styling remain template-neutral", () => {
+  assert.equal(THEME_STORAGE_KEY, "portfolio-color-theme");
+  assert.match(source("globals.css"), /\.about-story-text-only \{ grid-template-columns: minmax\(0, 640px\); \}/);
+  assert.match(source("about/page.js"), /about\.image && <AboutReveal/);
+  assert.match(source("layout.js"), /title: site\.name/);
+  assert.match(source("components/Intro.js"), /description = site\.tagline/);
 });

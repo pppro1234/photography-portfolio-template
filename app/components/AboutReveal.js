@@ -3,8 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { m as motion, useInView, useReducedMotion } from "framer-motion";
 import { getAboutRevealAnimation } from "../lib/about-motion.mjs";
+import { MOTION_DURATION, MOTION_EASE, motionBlur, motionTransition } from "../lib/motion-tokens.mjs";
 
 const elements = { div: motion.div, p: motion.p, h1: motion.h1, h2: motion.h2, figure: motion.figure, nav: motion.nav };
+
+// Inherit the figure's ready/visible state, but blur only the caption text.
+export function AboutCaption({ children }) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.figcaption className="motion-blur-content"
+      variants={{ hidden: { filter: reduceMotion ? "none" : motionBlur() }, visible: { filter: "none" } }}
+      transition={motionTransition(MOTION_DURATION.image, { instant: reduceMotion, ease: MOTION_EASE.inOut })}>
+      {children}
+    </motion.figcaption>
+  );
+}
 
 export default function AboutReveal({ as = "div", order = 0, media = false, className = "", children, ...props }) {
   const ref = useRef(null);

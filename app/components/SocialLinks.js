@@ -13,7 +13,7 @@ export default function SocialLinks({
   const isFooter = variant === "footer";
   const linkClassName = isFooter
     ? "grid size-12 place-items-center text-white/70 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-    : "grid size-11 place-items-center text-neutral-500 motion-color-feedback hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black";
+    : "social-link-page grid size-11 place-items-center motion-color-feedback focus-visible:outline-2 focus-visible:outline-offset-2";
 
   return (
     <ul

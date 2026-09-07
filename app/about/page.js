@@ -6,7 +6,7 @@ import gallery from "../gallery-data.json";
 import { site, contactLinks } from "../lib/site-content";
 import { resolveAboutContent } from "../lib/about-content.mjs";
 import { validateGalleryImages } from "../lib/gallery-data.mjs";
-import AboutReveal from "../components/AboutReveal";
+import AboutReveal, { AboutCaption } from "../components/AboutReveal";
 
 export const metadata = {
   title: `About — ${site.name}`,
@@ -17,7 +17,7 @@ export default function AboutPage() {
   const about = resolveAboutContent(config, site, validateGalleryImages(gallery));
   return (
     <main id="main-content" tabIndex={-1} className="about-page">
-      <noscript><style>{".about-reveal{opacity:1!important;transform:none!important}"}</style></noscript>
+      <noscript><style>{".about-reveal{opacity:1!important;transform:none!important;filter:none!important}.about-reveal .motion-blur-content{filter:none!important}"}</style></noscript>
       <section aria-labelledby="about-title" className="about-intro">
         <AboutReveal as="p" className="page-eyebrow">About</AboutReveal>
         <AboutReveal as="h1" order={1} id="about-title">{about.title}</AboutReveal>
@@ -26,7 +26,7 @@ export default function AboutPage() {
         {about.image && <AboutReveal as="figure" order={1} media className="about-photograph">
           <Image src={about.image.src} alt={about.imageAlt} width={about.image.width} height={about.image.height}
             sizes="(min-width: 1400px) 668px, (min-width: 768px) 50vw, 100vw" priority />
-          <figcaption>{about.imageCaption}</figcaption>
+          <AboutCaption>{about.imageCaption}</AboutCaption>
         </AboutReveal>}
         <div className="about-copy">
           <AboutReveal as="p" order={1} className="about-statement">{about.statement}</AboutReveal>

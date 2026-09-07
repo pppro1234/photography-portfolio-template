@@ -1,10 +1,27 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
+  --work-foreground: #000000;
   --surface-soft: #f5f5f7;
   --muted: #6e6e73;
+  --ink-strong: #1d1d1f;
+  --ink-secondary: #515154;
+  --ink-hover: #000000;
+  --ink-link-hover: #111111;
+  --ink-caption: #737373;
+  --ink-filter: #767679;
+  --filter-count-opacity: .7;
+  --nav-surface: #fafafc;
+  --nav-glass: rgb(250 250 252 / 82%);
+  --nav-scrim: rgb(232 232 237 / 40%);
+  --photo-placeholder: #f5f5f5;
+  --lightbox-backdrop: rgb(0 0 0 / 75%);
+  --selection-background: #000000;
+  --selection-foreground: #ffffff;
+  --footer-separator: transparent;
   --nav-height: 44px;
 }
 
@@ -16,11 +33,59 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #000000;
+    --foreground: #f5f5f7;
+    --work-foreground: #f5f5f7;
+    --surface-soft: #111111;
+    --muted: #a1a1a6;
+    --ink-strong: #f5f5f7;
+    --ink-secondary: #c2c2c7;
+    --ink-hover: #ffffff;
+    --ink-link-hover: #ffffff;
+    --ink-caption: #a1a1a6;
+    --ink-filter: #a1a1a6;
+    --filter-count-opacity: 1;
+    --nav-surface: #000000;
+    --nav-glass: rgb(0 0 0 / 82%);
+    --nav-scrim: rgb(0 0 0 / 55%);
+    --photo-placeholder: #111111;
+    --lightbox-backdrop: #000000;
+    --selection-background: #ffffff;
+    --selection-foreground: #000000;
+    --footer-separator: #242424;
   }
 }
+
+/* Explicit dark works under a light OS; explicit light skips the media override. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #f5f5f7;
+  --work-foreground: #f5f5f7;
+  --surface-soft: #111111;
+  --muted: #a1a1a6;
+  --ink-strong: #f5f5f7;
+  --ink-secondary: #c2c2c7;
+  --ink-hover: #ffffff;
+  --ink-link-hover: #ffffff;
+  --ink-caption: #a1a1a6;
+  --ink-filter: #a1a1a6;
+  --filter-count-opacity: 1;
+  --nav-surface: #000000;
+  --nav-glass: rgb(0 0 0 / 82%);
+  --nav-scrim: rgb(0 0 0 / 55%);
+  --photo-placeholder: #111111;
+  --lightbox-backdrop: #000000;
+  --selection-background: #ffffff;
+  --selection-foreground: #000000;
+  --footer-separator: #242424;
+}
+
+/* Without a saved choice (or JavaScript), CSS still follows the system. */
+html { background: var(--background); }
+::selection { background: var(--selection-background); color: var(--selection-foreground); }
 
 body {
   background: var(--background);
@@ -37,10 +102,14 @@ body {
 html { scroll-padding-top: calc(var(--nav-height) + 24px); }
 button, a { -webkit-tap-highlight-color: transparent; }
 .motion-color-feedback { transition: color var(--motion-duration-feedback) var(--motion-ease-out); }
+.intro-tagline { color: var(--ink-caption); }
+.social-link-page { color: var(--ink-caption); }
+.social-link-page:hover { color: var(--ink-hover); }
 :focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
 .about-page { max-width: 1400px; margin-inline: auto; padding: 132px 32px 112px; }
 /* Focus must override an entrance that is already delayed or running. */
-.about-reveal:focus-within, .about-reveal[data-reveal-focused] { opacity: 1 !important; transform: none !important; }
+.about-reveal:focus-within, .about-reveal[data-reveal-focused] { opacity: 1 !important; transform: none !important; filter: none !important; }
+.motion-blur-content:has(:focus-visible) { filter: none !important; }
 .page-eyebrow { font-size: 14px; color: var(--muted); margin-bottom: 16px; }
 .about-intro { margin-bottom: 52px; }
 .about-intro h1 { font-size: clamp(24px, 3vw, 30px); font-weight: 300; line-height: 1.2; letter-spacing: normal; }
@@ -50,12 +119,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .about-photograph figcaption { font-size: 12px; color: var(--muted); margin-top: 14px; }
 .about-statement { font-size: clamp(20px, 2vw, 24px); line-height: 1.5; letter-spacing: normal; font-weight: 300; margin-bottom: 36px; }
 .about-copy h2 { font-size: 15px; margin-bottom: 20px; }
-.about-description { color: #6e6e73; font-size: 16px; line-height: 1.8; margin-bottom: 16px; }
-.about-work-link { display: inline-flex; gap: 16px; align-items: center; justify-content: center; min-height: 48px; color: #1d1d1f; padding: 12px 0; font-size: 14px; margin-top: 20px; }
+.about-description { color: var(--muted); font-size: 16px; line-height: 1.8; margin-bottom: 16px; }
+.about-work-link { display: inline-flex; gap: 16px; align-items: center; justify-content: center; min-height: 48px; color: var(--ink-strong); padding: 12px 0; font-size: 14px; margin-top: 20px; }
 .about-work-link:hover { text-decoration: underline; text-underline-offset: 6px; }
 .about-social-links { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 32px; }
-.about-social-links a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: #515154; transition: color var(--motion-duration-feedback) var(--motion-ease-out); }
-.about-social-links a:hover { color: #111; text-decoration: underline; text-underline-offset: 4px; }
+.about-social-links a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; color: var(--ink-secondary); transition: color var(--motion-duration-feedback) var(--motion-ease-out); }
+.about-social-links a:hover { color: var(--ink-link-hover); text-decoration: underline; text-underline-offset: 4px; }
+.not-found-page { min-height: 100svh; display: flex; align-items: center; justify-content: center; padding: 96px 20px; gap: 20px; }
+.not-found-page h1 { padding-right: 20px; border-right: 1px solid var(--muted); font-size: 24px; }
+.not-found-page p { font-size: 14px; }
 @media (max-width: 767px) {
   .about-page { padding: 112px 20px 72px; }
   .about-intro { margin-bottom: 32px; }
@@ -63,6 +135,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .about-statement { font-size: 20px; margin-bottom: 28px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .about-reveal { opacity: 1 !important; transform: none !important; }
+  .about-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .motion-blur-content { filter: none !important; }
   .nav-item, .gallery-filter, .about-work-link, .about-social-links a, .motion-color-feedback { transition: none; }
 }

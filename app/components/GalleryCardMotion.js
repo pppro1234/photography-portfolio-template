@@ -102,7 +102,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
         aria-label={`Open ${title}`}
         onClick={(event) => openLightbox(id, event.currentTarget)}
         style={{ y: shouldReduceMotion ? 0 : cardY }}
-        className="group relative block h-full w-full min-h-0 min-w-0 overflow-hidden bg-neutral-100 text-left cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-4"
+        className="gallery-card-button group relative block h-full w-full min-h-0 min-w-0 overflow-hidden text-left cursor-zoom-in"
       >
         <motion.div className="gallery-image" style={{ y: shouldReduceMotion ? 0 : imageY }}>
           {children}

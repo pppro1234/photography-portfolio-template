@@ -88,7 +88,7 @@ test("original continuous springs and photograph spring are unchanged", () => {
 
 test("lightbox descendants exit with the backdrop instead of retaining invisible interaction locks", () => {
   const lightbox = source("components/ImageLightbox.js");
-  assert.match(lightbox, /exit=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 10, transition: motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
+  assert.match(lightbox, /exit=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 10, filter: textBlur, transition: motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
   assert.match(lightbox, /exit=\{\{ opacity: 0, scale: shouldReduceMotion \? 1 : 0\.92, transition: \{ type: "tween", \.\.\.motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
   assert.equal(motionTransition(MOTION_DURATION.control).delay, 0);
 });

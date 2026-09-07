@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { m as motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { photoTitleClassName } from "../lib/gallery-presentation";
-import { MOTION_DURATION, MOTION_SPRING, motionTransition } from "../lib/motion-tokens.mjs";
+import { MOTION_BLUR, MOTION_DURATION, MOTION_EASE, MOTION_SPRING, motionBlur, motionRevealTransition, motionTransition } from "../lib/motion-tokens.mjs";
 
 const getLightboxImageSizes = (img) =>
   img.isWide
@@ -19,6 +19,13 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
   const scrollContainerRef = useRef(null);
   const touchStartRef = useRef(null);
   const shouldReduceMotion = useReducedMotion();
+  const textBlur = shouldReduceMotion ? "none" : motionBlur();
+  const glyphMotion = {
+    initial: { filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control) },
+    animate: { filter: "none", transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion, ease: MOTION_EASE.inOut }) },
+    exit: { filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control) },
+    transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }),
+  };
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -97,15 +104,15 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
 
   const textBlock = (
     <motion.div
-      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 10, transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) }}
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur }}
+      animate={{ opacity: 1, y: 0, filter: "none" }}
+      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 10, filter: textBlur, transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) }}
       onClick={(event) => event.stopPropagation()}
-      transition={motionTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
+      transition={motionRevealTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
       className={
         isWide
-          ? "w-full max-w-4xl px-3 text-center md:px-0 md:text-left"
-          : "w-full max-w-md px-3 text-center md:px-0 md:text-left"
+          ? "motion-blur-content w-full max-w-4xl px-3 text-center md:px-0 md:text-left"
+          : "motion-blur-content w-full max-w-md px-3 text-center md:px-0 md:text-left"
       }
     >
       <h2
@@ -127,7 +134,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
       aria-modal="true"
       aria-labelledby={`lightbox-title-${img.id}`}
       aria-describedby={`lightbox-description-${img.id}`}
-      className="fixed inset-0 z-[100] bg-black/75 text-white backdrop-blur-sm"
+      className="image-lightbox fixed inset-0 z-[100] text-white backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) }}
@@ -142,13 +149,13 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
           event.stopPropagation();
           onClose();
         }}
-        className="fixed right-4 top-4 z-[110] grid size-11 place-items-center text-white/75 motion-color-feedback hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-8 md:top-8"
+        className="lightbox-control fixed right-4 top-4 z-[110] grid size-11 place-items-center text-white/75 motion-color-feedback hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-8 md:top-8"
         initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82 }}
         transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
       >
-        <X size={20} />
+        <motion.span className="lightbox-control-glyph" {...glyphMotion}><X size={20} /></motion.span>
       </motion.button>
 
       {canNavigate && (
@@ -164,9 +171,9 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
               event.stopPropagation();
               onNavigate(-1);
             }}
-            className="pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="lightbox-control pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <ChevronLeft size={22} aria-hidden="true" />
+            <motion.span className="lightbox-control-glyph" {...glyphMotion}><ChevronLeft size={22} aria-hidden="true" /></motion.span>
           </button>
           <button
             type="button"
@@ -176,9 +183,9 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
               event.stopPropagation();
               onNavigate(1);
             }}
-            className="pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="lightbox-control pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
-            <ChevronRight size={22} aria-hidden="true" />
+            <motion.span className="lightbox-control-glyph" {...glyphMotion}><ChevronRight size={22} aria-hidden="true" /></motion.span>
           </button>
         </nav>
       )}
