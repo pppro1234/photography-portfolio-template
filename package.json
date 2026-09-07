@@ -9,6 +9,7 @@
     "predev": "npm run gallery:sync",
     "dev": "next dev",
     "gallery:sync": "node scripts/sync-gallery.mjs",
+    "check": "node --test scripts/check-*.mjs",
     "prebuild": "npm run gallery:sync",
     "build": "next build",
     "start": "next start"
