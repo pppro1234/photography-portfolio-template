@@ -58,7 +58,7 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
     }
 
     const sync = () => {
-      if (disposed) return;
+      if (disposed || document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return;
       const next = measure(label);
       if (!media.matches && next.x === target.x && next.y === target.y && next.width === target.width) return;
       animations.forEach((animation) => animation.stop());
@@ -74,6 +74,7 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
     document.fonts.ready.then(sync);
     document.fonts.addEventListener("loadingdone", sync);
     media.addEventListener("change", sync);
+    window.addEventListener("lightbox:restore", sync);
 
     return () => {
       disposed = true;
@@ -89,6 +90,7 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
       observer.disconnect();
       document.fonts.removeEventListener("loadingdone", sync);
       media.removeEventListener("change", sync);
+      window.removeEventListener("lightbox:restore", sync);
       delete nav.dataset.motionReady;
       delete active.dataset.motionTo;
       if (previousLink) delete previousLink.dataset.motionFrom;

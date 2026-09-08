@@ -1,7 +1,8 @@
 "use client";
 
+import { useReducedMotionPreference } from "./useReducedMotionPreference";
 import { useEffect, useRef, useState } from "react";
-import { m as motion, useInView, useReducedMotion } from "framer-motion";
+import { m as motion, useInView } from "framer-motion";
 import { getAboutRevealAnimation } from "../lib/about-motion.mjs";
 import { MOTION_DURATION, MOTION_EASE, motionBlur, motionTransition } from "../lib/motion-tokens.mjs";
 
@@ -9,7 +10,7 @@ const elements = { div: motion.div, p: motion.p, h1: motion.h1, h2: motion.h2, f
 
 // Inherit the figure's ready/visible state, but blur only the caption text.
 export function AboutCaption({ children }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotionPreference();
   return (
     <motion.figcaption className="motion-blur-content"
       variants={{ hidden: { filter: reduceMotion ? "none" : motionBlur() }, visible: { filter: "none" } }}
@@ -22,7 +23,7 @@ export function AboutCaption({ children }) {
 export default function AboutReveal({ as = "div", order = 0, media = false, className = "", children, ...props }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.12 });
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotionPreference();
   const [mediaReady, setMediaReady] = useState(!media);
   const [focused, setFocused] = useState(false);
   const animation = getAboutRevealAnimation({ order, media, instant: reduceMotion || focused });

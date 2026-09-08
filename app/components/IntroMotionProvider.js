@@ -1,8 +1,9 @@
 "use client";
 
+import { useReducedMotionPreference } from "./useReducedMotionPreference";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
+import { useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { clampProgress, collapseEasing, getBrandTransform, getIntroGeometry, getNavigationReveal, INTRO_SPRING, smoothStep } from "../lib/intro-motion.mjs";
 import { MOTION_BLUR, motionBlur } from "../lib/motion-tokens.mjs";
 
@@ -15,7 +16,7 @@ export function useIntroMotion() {
 export default function IntroMotionProvider({ children }) {
   const pathname = usePathname();
   const { scrollY } = useScroll();
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useReducedMotionPreference();
   const smoothScroll = useSpring(scrollY, INTRO_SPRING);
   const menuProgress = useMotionValue(0);
   const smoothMenu = useSpring(menuProgress, INTRO_SPRING);

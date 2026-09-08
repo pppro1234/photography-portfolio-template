@@ -1,6 +1,27 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getCardScrollProgress, observeNearViewport } from "../app/lib/near-viewport.mjs";
+import { createReducedMotionStore } from "../app/lib/reduced-motion.mjs";
+
+test("motion preferences reflect live changes and detach listeners on cleanup", () => {
+  const media = new EventTarget();
+  media.matches = false;
+  let queries = 0;
+  const store = createReducedMotionStore(() => { queries++; return media; });
+  const snapshots = [];
+  const unsubscribe = store.subscribe(() => snapshots.push(store.getSnapshot()));
+  assert.equal(store.getSnapshot(), false);
+  media.matches = true;
+  media.dispatchEvent(new Event("change"));
+  media.matches = false;
+  media.dispatchEvent(new Event("change"));
+  assert.deepEqual(snapshots, [true, false]);
+  assert.equal(queries, 1);
+  unsubscribe();
+  media.dispatchEvent(new Event("change"));
+  assert.equal(snapshots.length, 2);
+  assert.equal(createReducedMotionStore(() => null).getSnapshot(), false);
+});
 
 const createElement = (top, bottom = top + 100) => ({
   getBoundingClientRect: () => ({ top, bottom }),

@@ -1,13 +1,51 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
-import { m as motion, useIsPresent, useReducedMotion } from "framer-motion";
+import { useReducedMotionPreference } from "./useReducedMotionPreference";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { m as motion, useIsPresent } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import LightboxPhoto from "./LightboxPhoto";
 import { useLightboxScene } from "./useLightboxScene";
 import { photoTitleClassName } from "../lib/gallery-presentation";
-import { getLightboxExitTransition, getLightboxTransition } from "../lib/lightbox-motion.mjs";
+import { getLightboxExitTransition, getLightboxTarget, getLightboxTransition } from "../lib/lightbox-motion.mjs";
 import { MOTION_BLUR, MOTION_DURATION, MOTION_EASE, motionBlur, motionRevealTransition, motionTransition } from "../lib/motion-tokens.mjs";
+
+function LightboxContent({ img, getThumbnail, shouldReduceMotion }) {
+  const [ready, setReady] = useState(false);
+  const isWide = img.isWide;
+  const textBlur = shouldReduceMotion ? "none" : motionBlur();
+  const textBlock = (
+    <motion.div
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur }}
+      animate={getLightboxTarget({ opacity: ready ? 1 : 0, y: shouldReduceMotion || ready ? 0 : 18, filter: ready ? "none" : textBlur }, shouldReduceMotion)}
+      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
+      onClick={(event) => event.stopPropagation()}
+      transition={motionRevealTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
+      className={
+        isWide
+          ? "motion-blur-content w-full max-w-4xl px-3 text-center md:px-0 md:text-left"
+          : "motion-blur-content w-full max-w-md px-3 text-center md:px-0 md:text-left"
+      }
+    >
+      <h2
+        id={`lightbox-title-${img.id}`}
+        className={photoTitleClassName}
+      >
+        {img.title}
+      </h2>
+      <p id={`lightbox-description-${img.id}`} className="mt-4 font-sans text-base font-light leading-6 tracking-normal text-white/70">
+        {img.description || img.category}
+      </p>
+    </motion.div>
+  );
+
+  return (
+    <>
+      <LightboxPhoto img={img} getThumbnail={getThumbnail} shouldReduceMotion={shouldReduceMotion} onReady={setReady} />
+      {textBlock}
+    </>
+  );
+}
 
 const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, getThumbnail }) => {
   const isWide = img.isWide;
@@ -16,11 +54,10 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
   const scrollContainerRef = useRef(null);
   const touchStartRef = useRef(null);
   const isPresent = useIsPresent();
-  const shouldReduceMotion = useReducedMotion();
-  const textBlur = shouldReduceMotion ? "none" : motionBlur();
+  const shouldReduceMotion = useReducedMotionPreference();
   const glyphMotion = {
     initial: { filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control) },
-    animate: { filter: "none", transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion, ease: MOTION_EASE.inOut }) },
+    animate: { ...getLightboxTarget({ filter: "none" }, shouldReduceMotion), transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion, ease: MOTION_EASE.inOut }) },
     exit: {
       filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control),
       transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }),
@@ -90,30 +127,6 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
     }
   };
 
-  const textBlock = (
-    <motion.div
-      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur }}
-      animate={{ opacity: 1, y: 0, filter: "none" }}
-      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
-      onClick={(event) => event.stopPropagation()}
-      transition={motionRevealTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
-      className={
-        isWide
-          ? "motion-blur-content w-full max-w-4xl px-3 text-center md:px-0 md:text-left"
-          : "motion-blur-content w-full max-w-md px-3 text-center md:px-0 md:text-left"
-      }
-    >
-      <h2
-        id={`lightbox-title-${img.id}`}
-        className={photoTitleClassName}
-      >
-        {img.title}
-      </h2>
-      <p id={`lightbox-description-${img.id}`} className="mt-4 font-sans text-base font-light leading-6 tracking-normal text-white/70">
-        {img.description || img.category}
-      </p>
-    </motion.div>
-  );
 
   return (
     <motion.div
@@ -129,7 +142,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
         aria-hidden="true"
         className="image-lightbox-backdrop pointer-events-none absolute inset-0"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={getLightboxTarget({ opacity: 1 }, shouldReduceMotion)}
         exit={{ opacity: 0, transition: getLightboxExitTransition({ instant: shouldReduceMotion }) }}
         transition={getLightboxTransition({ instant: shouldReduceMotion })}
       />
@@ -143,7 +156,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
         }}
         className="lightbox-control fixed right-4 top-4 z-[110] grid size-11 place-items-center text-white/75 motion-color-feedback hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-8 md:top-8"
         initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82 }}
-        animate={{ opacity: 1, scale: 1 }}
+        animate={getLightboxTarget({ opacity: 1, scale: 1 }, shouldReduceMotion)}
         exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
         transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
       >
@@ -155,7 +168,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
           aria-label="Photo navigation"
           className="pointer-events-none fixed inset-x-0 top-4 z-[110] flex justify-center gap-3 md:top-1/2 md:-translate-y-1/2 md:justify-between md:px-4"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={getLightboxTarget({ opacity: 1 }, shouldReduceMotion)}
           exit={{ opacity: 0, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
           transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
         >
@@ -214,12 +227,11 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
                 : "flex w-full max-w-6xl flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-10 lg:gap-14"
             }
           >
-            <LightboxPhoto
+            <LightboxContent
               img={img}
               getThumbnail={getThumbnail}
               shouldReduceMotion={shouldReduceMotion}
             />
-            {textBlock}
           </div>
         </div>
       </div>

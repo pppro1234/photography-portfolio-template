@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import { MOTION_DURATION, MOTION_DELAY, MOTION_EASE, MOTION_SPRING, motionCssVariables, motionTransition } from "../app/lib/motion-tokens.mjs";
 import { INTRO_SPRING } from "../app/lib/intro-motion.mjs";
-import { getLightboxExitTransition, getLightboxTransition } from "../app/lib/lightbox-motion.mjs";
+import { getLightboxExitTransition, getLightboxPhotoTransition, getLightboxTransition } from "../app/lib/lightbox-motion.mjs";
 
 const source = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
 const kebab = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
@@ -92,7 +92,9 @@ test("lightbox exits detail, photo and surface in order, releasing the page at t
   assert.match(lightbox, /exit=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 18, filter: textBlur, transition: getLightboxExitTransition\(\{ layer: "detail", instant: shouldReduceMotion \}\)/);
   const photo = source("components/LightboxPhoto.js");
   assert.match(photo, /exit=\{\{ opacity: 0, transition: getLightboxExitTransition\(\{ layer: "photo", instant: shouldReduceMotion \}\)/);
-  assert.match(photo, /motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
+  assert.match(photo, /getLightboxPhotoTransition\(\{ instant: shouldReduceMotion \}\)/);
+  assert.deepEqual(getLightboxPhotoTransition(), motionTransition(MOTION_DURATION.surface, { ease: MOTION_EASE.inOut }));
+  assert.equal(getLightboxPhotoTransition({ instant: true }).duration, 0);
   const sceneSource = source("components/useLightboxScene.js");
   assert.match(sceneSource, /if \(!cancelled && !isPresent\) safeToRemove\?\.\(\)/);
   assert.match(sceneSource, /delay: transition.delay \* 1000/);

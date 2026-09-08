@@ -1,6 +1,53 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { freezeLightboxScene } from "../app/lib/lightbox-motion.mjs";
+import { readFileSync } from "node:fs";
+import { freezeLightboxScene, getLightboxTarget, observeLightboxPreview } from "../app/lib/lightbox-motion.mjs";
+
+test("cached and late thumbnails become available, while failed or unmounted images cannot reveal stale photos", () => {
+  const image = new EventTarget();
+  Object.assign(image, { complete: false, naturalWidth: 0, currentSrc: "", src: "/photo.jpg" });
+  const ready = [];
+  const stop = observeLightboxPreview(image, (src) => ready.push(src));
+  assert.deepEqual(ready, []);
+  image.dispatchEvent(new Event("error"));
+  assert.deepEqual(ready, []);
+  Object.assign(image, { complete: true, naturalWidth: 900, currentSrc: "/optimized-photo.jpg" });
+  image.dispatchEvent(new Event("load"));
+  assert.deepEqual(ready, ["/optimized-photo.jpg"]);
+  stop();
+  image.dispatchEvent(new Event("load"));
+  assert.equal(ready.length, 1);
+  observeLightboxPreview(image, (src) => ready.push(src))();
+  assert.equal(ready.length, 2, "a cached image reveals immediately");
+  assert.doesNotThrow(() => observeLightboxPreview(null, () => {})());
+});
+
+test("photo and caption entrances wait for content, with a readable failure fallback", () => {
+  const photo = readFileSync(new URL("../app/components/LightboxPhoto.js", import.meta.url), "utf8");
+  assert.match(photo, /animate=\{getLightboxTarget\(\{ opacity: ready \|\| hasError \? 1 : 0/);
+  assert.match(photo, /onError=\{\(\) => setHasError\(true\)\}/);
+  assert.match(photo, /previewSrc && !isLoaded/);
+  assert.match(photo, /hasError && !ready/);
+  const dialog = readFileSync(new URL("../app/components/ImageLightbox.js", import.meta.url), "utf8");
+  assert.match(dialog, /animate=\{getLightboxTarget\(\{ opacity: ready \? 1 : 0/);
+  assert.match(dialog, /key=\{img.id\}/);
+});
+
+test("enabling reduced motion changes running entrance targets and never waits for an obsolete exit", () => {
+  const destination = { opacity: 1, y: 0, filter: "none" };
+  assert.equal(getLightboxTarget(destination), destination);
+  assert.deepEqual(getLightboxTarget(destination, true), { opacity: [1], y: [0], filter: ["none"] });
+  assert.deepEqual(getLightboxTarget({ opacity: 0 }, true), { opacity: [0] }, "unloaded photos stay hidden");
+  const controller = readFileSync(new URL("../app/components/GalleryController.js", import.meta.url), "utf8");
+  assert.match(controller, /if \(shouldReduceMotion && !selectedImage && isLightboxActive\) finishLightbox\(\)/);
+});
+
+test("filter geometry avoids the recessed scene and resynchronizes after restoring the overview", () => {
+  const source = readFileSync(new URL("../app/components/GalleryFilterMotion.js", import.meta.url), "utf8");
+  assert.match(source, /if \(disposed \|\| document.getElementById\("site-scene"\)\?\.hasAttribute\("data-lightbox-scene"\)\) return/);
+  assert.match(source, /window.addEventListener\("lightbox:restore", sync\)/);
+  assert.match(source, /window.removeEventListener\("lightbox:restore", sync\)/);
+});
 
 function element(height = 0, changes = []) {
   const values = new Map();

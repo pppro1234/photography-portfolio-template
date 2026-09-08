@@ -1,8 +1,9 @@
 "use client";
 
+import { useReducedMotionPreference } from "./useReducedMotionPreference";
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
+import { AnimatePresence, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import ImageLightbox from "./ImageLightbox";
 import { useNearViewport, usePageVisible } from "./useMotionActivity";
 import { useSpringCleanup } from "./useSpringCleanup";
@@ -53,7 +54,7 @@ export default function GalleryController({ images, children }) {
   const returnFocusRef = useRef(null);
   const isNearViewport = useNearViewport(sectionRef);
   const isPageVisible = usePageVisible();
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useReducedMotionPreference();
   const floatProgress = useMotionValue(0);
   const floatScale = useMotionValue(1);
   const imagesById = useMemo(() => new Map(images.map((img) => [img.id, img])), [images]);
@@ -70,6 +71,11 @@ export default function GalleryController({ images, children }) {
     lightboxActiveRef.current = false;
     setIsLightboxActive(false);
   }, []);
+  useLayoutEffect(() => {
+    // A preference change during exit must not wait for an older Motion
+    // completion promise. Unmounting also runs the scene/focus restoration.
+    if (shouldReduceMotion && !selectedImage && isLightboxActive) finishLightbox();
+  }, [shouldReduceMotion, selectedImage, isLightboxActive, finishLightbox]);
   const getThumbnail = useCallback((id) => {
     const thumbnails = sectionRef.current?.querySelectorAll("[data-photo-id]");
     return Array.from(thumbnails || []).find((thumbnail) => thumbnail.dataset.photoId === String(id)) || null;

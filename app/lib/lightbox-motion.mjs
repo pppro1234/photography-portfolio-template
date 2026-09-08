@@ -2,6 +2,27 @@ import { MOTION_DELAY, MOTION_DURATION, MOTION_EASE, motionTransition } from "./
 
 export const LIGHTBOX_DEPTH_SCALE = 0.98;
 
+export function getLightboxPhotoTransition({ instant = false } = {}) {
+  return motionTransition(MOTION_DURATION.surface, { instant, ease: MOTION_EASE.inOut });
+}
+
+// Switching a scalar target to one terminal keyframe also interrupts a running
+// entrance when the preference changes, even if its destination is unchanged.
+export function getLightboxTarget(values, instant = false) {
+  return instant ? Object.fromEntries(Object.entries(values).map(([key, value]) => [key, [value]])) : values;
+}
+
+// A thumbnail can finish after opening, or already be in the browser cache.
+export function observeLightboxPreview(image, onReady) {
+  if (!image) return () => {};
+  const ready = () => {
+    if (image.naturalWidth > 0) onReady(image.currentSrc || image.src);
+  };
+  image.addEventListener("load", ready);
+  if (image.complete) ready();
+  return () => image.removeEventListener("load", ready);
+}
+
 // Dismiss foreground details first, then the photo, then reveal the overview.
 // The scene and scrim finish together, keeping the entire exit within 320ms.
 const LIGHTBOX_EXIT = {
