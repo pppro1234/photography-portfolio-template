@@ -137,12 +137,13 @@ test("focused theme glyphs remain exclusive rather than making all three icons v
   assert.doesNotMatch(focused.declarations, /opacity:/);
 });
 
-test("lightbox filters stay on captions and glyphs, with no blur on the image, backdrop or focus ring", () => {
+test("lightbox keeps foreground blur on captions and glyphs while the backdrop only blurs the page behind", () => {
   const component = source("components/ImageLightbox.js");
   assert.match(component, /initial=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 18, filter: textBlur/);
   assert.equal((component.match(/<motion.span className="lightbox-control-glyph" \{\.\.\.glyphMotion\}/g) || []).length, 3);
-  const photograph = component.slice(component.indexOf('className="w-full max-w-full md:w-auto"'));
+  const photograph = source("components/LightboxPhoto.js");
   assert.doesNotMatch(photograph, /filter:/);
+  assert.match(source("gallery.css"), /backdrop-filter: blur\(var\(--lightbox-backdrop-blur\)\)/);
   assert.match(source("gallery.css"), /\.lightbox-control:focus-visible \.lightbox-control-glyph \{ filter: none !important/);
 });
 

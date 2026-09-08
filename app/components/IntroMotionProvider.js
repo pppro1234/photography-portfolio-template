@@ -57,7 +57,8 @@ export default function IntroMotionProvider({ children }) {
   useLayoutEffect(() => {
     let cancelled = false;
     const sync = () => {
-      if (cancelled) return;
+      // Frozen lightbox bounds use viewport coordinates, not document space.
+      if (cancelled || document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return;
       const currentScroll = Math.max(0, window.scrollY);
       const origin = document.getElementById("intro-origin");
       if (origin) {
@@ -87,12 +88,14 @@ export default function IntroMotionProvider({ children }) {
     document.fonts.ready.then(sync);
     window.addEventListener("resize", sync);
     window.addEventListener("pageshow", sync);
+    window.addEventListener("lightbox:restore", sync);
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", sync);
       window.removeEventListener("pageshow", sync);
+      window.removeEventListener("lightbox:restore", sync);
     };
   }, [pathname, geometry, scrollY, smoothScroll]);
 

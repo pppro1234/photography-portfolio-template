@@ -50,13 +50,16 @@ test("About follows existing site identity and current photos without fixed samp
   assert.equal(resolveAboutContent({ statement: "Personal statement" }, site, []).statement, "Personal statement");
 });
 
-test("every contact surface hides empty configuration and navigation indices follow content", () => {
+test("About remains available with no social links and navigation indices follow configured content", () => {
   const header = source("components/SiteHeader.js");
-  assert.match(header, /const hasContacts = contactLinks.length > 0/);
-  assert.ok((header.match(/hasContacts &&/g) || []).length >= 3);
-  assert.match(header, /"--item-total": mobileItemTotal/);
-  assert.match(header, /renderContacts\(mobileContactStart\)/);
-  assert.match(source("components/Footer.js"), /contactLinks.length > 0 &&/);
+  assert.match(header, /import \{ site, contactLinks \} from "\.\.\/lib\/site-content"/);
+  assert.match(header, /contactLinks\.map\(/);
+  assert.match(header, /"--item-total": workLinks.length \+ contactLinks.length \+ 4/);
+  assert.match(header, /renderAboutLinks\(workLinks.length \+ 3\)/);
+  assert.match(header, /<Link href="\/about" className="nav-bio-link/);
+  assert.doesNotMatch(header, /hasContacts|profiles\./);
+  assert.match(source("components/Footer.js"), /contactLinks\.map\(/);
+  assert.match(source("components/Footer.js"), /<Link href="\/about"/);
   assert.match(source("about/page.js"), /contactLinks.length > 0 &&/);
 });
 

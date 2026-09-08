@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import { MOTION_DURATION, MOTION_DELAY, MOTION_EASE, MOTION_SPRING, motionCssVariables, motionTransition } from "../app/lib/motion-tokens.mjs";
 import { INTRO_SPRING } from "../app/lib/intro-motion.mjs";
+import { getLightboxExitTransition, getLightboxTransition } from "../app/lib/lightbox-motion.mjs";
 
 const source = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
 const kebab = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
@@ -73,7 +74,7 @@ test("reduced motion removes every timed duration and delay", () => {
   assert.doesNotMatch(lightbox, /duration:\s*0\.[1-9]/);
 });
 
-test("original continuous springs and photograph spring are unchanged", () => {
+test("continuous springs remain unchanged while the lightbox photograph only fades", () => {
   assert.deepEqual(MOTION_SPRING, {
     intro: { stiffness: 260, damping: 36, mass: 0.65 },
     galleryScroll: { stiffness: 150, damping: 24, mass: 0.6 },
@@ -83,14 +84,35 @@ test("original continuous springs and photograph spring are unchanged", () => {
   assert.equal(INTRO_SPRING, MOTION_SPRING.intro);
   assert.match(source("components/GalleryController.js"), /useSpring\(scrollY, MOTION_SPRING.galleryScroll\)/);
   assert.match(source("components/GalleryCardMotion.js"), /useSpring\(imageOffset, MOTION_SPRING.parallax\)/);
-  assert.match(source("components/ImageLightbox.js"), /\.\.\.MOTION_SPRING.lightbox/);
+  assert.doesNotMatch(source("components/LightboxPhoto.js"), /MOTION_SPRING|scale:|clipPath:|getBoundingClientRect/);
 });
 
-test("lightbox descendants exit with the backdrop instead of retaining invisible interaction locks", () => {
+test("lightbox exits detail, photo and surface in order, releasing the page at the last visible frame", () => {
   const lightbox = source("components/ImageLightbox.js");
-  assert.match(lightbox, /exit=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 10, filter: textBlur, transition: motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
-  assert.match(lightbox, /exit=\{\{ opacity: 0, scale: shouldReduceMotion \? 1 : 0\.92, transition: \{ type: "tween", \.\.\.motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
-  assert.equal(motionTransition(MOTION_DURATION.control).delay, 0);
+  assert.match(lightbox, /exit=\{\{ opacity: 0, y: shouldReduceMotion \? 0 : 18, filter: textBlur, transition: getLightboxExitTransition\(\{ layer: "detail", instant: shouldReduceMotion \}\)/);
+  const photo = source("components/LightboxPhoto.js");
+  assert.match(photo, /exit=\{\{ opacity: 0, transition: getLightboxExitTransition\(\{ layer: "photo", instant: shouldReduceMotion \}\)/);
+  assert.match(photo, /motionTransition\(MOTION_DURATION.control, \{ instant: shouldReduceMotion \}\)/);
+  const sceneSource = source("components/useLightboxScene.js");
+  assert.match(sceneSource, /if \(!cancelled && !isPresent\) safeToRemove\?\.\(\)/);
+  assert.match(sceneSource, /delay: transition.delay \* 1000/);
+  assert.match(sceneSource, /fill: "backwards"/);
+
+  const layers = ["detail", "photo", "surface"];
+  const exits = layers.map((layer) => getLightboxExitTransition({ layer }));
+  const end = (transition) => transition.delay + transition.duration;
+  assert.equal(exits[0].delay, 0, "captions must not inherit their entry delay");
+  assert.ok(exits[0].delay < exits[1].delay && exits[1].delay < exits[2].delay);
+  assert.ok(end(exits[0]) < end(exits[1]) && end(exits[1]) <= end(exits[2]));
+  assert.equal(end(exits[2]), MOTION_DURATION.surface / 1000);
+  assert.deepEqual(getLightboxTransition({ isPresent: false }), exits[2]);
+  for (const [index, layer] of layers.entries()) {
+    assert.deepEqual(exits[index].ease, MOTION_EASE.inOut);
+    const instant = getLightboxExitTransition({ layer, instant: true });
+    assert.equal(instant.duration, 0);
+    assert.equal(instant.delay, 0);
+  }
+  assert.deepEqual(getLightboxTransition({ isPresent: false, instant: true }), getLightboxExitTransition({ instant: true }));
 });
 
 test("image hover uses scoped properties and keyboard content remains immediately readable", () => {

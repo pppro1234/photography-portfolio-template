@@ -20,7 +20,8 @@ test("system dark mode uses true black without changing the light palette", () =
   assert.equal(light["--nav-surface"], "#fafafc");
   assert.equal(dark["--background"], "#000000");
   assert.equal(dark["--nav-surface"], "#000000");
-  assert.equal(dark["--lightbox-backdrop"], "#000000");
+  assert.equal(light["--lightbox-backdrop"], "rgb(0 0 0 / 92%)");
+  assert.equal(dark["--lightbox-backdrop"], "rgb(0 0 0 / 85%)");
   assert.match(lightBlock, /color-scheme: light;/);
   assert.match(darkBlock, /color-scheme: dark;/);
   assert.match(globals, /html \{ background: var\(--background\)/);

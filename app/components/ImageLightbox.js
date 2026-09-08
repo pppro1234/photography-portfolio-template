@@ -1,46 +1,34 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { m as motion, useReducedMotion } from "framer-motion";
+import { m as motion, useIsPresent, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import LightboxPhoto from "./LightboxPhoto";
+import { useLightboxScene } from "./useLightboxScene";
 import { photoTitleClassName } from "../lib/gallery-presentation";
-import { MOTION_BLUR, MOTION_DURATION, MOTION_EASE, MOTION_SPRING, motionBlur, motionRevealTransition, motionTransition } from "../lib/motion-tokens.mjs";
+import { getLightboxExitTransition, getLightboxTransition } from "../lib/lightbox-motion.mjs";
+import { MOTION_BLUR, MOTION_DURATION, MOTION_EASE, motionBlur, motionRevealTransition, motionTransition } from "../lib/motion-tokens.mjs";
 
-const getLightboxImageSizes = (img) =>
-  img.isWide
-    ? "(min-width: 768px) 90vw, 100vw"
-    : "(min-width: 768px) 58vw, 100vw";
-
-const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }) => {
+const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, getThumbnail }) => {
   const isWide = img.isWide;
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const touchStartRef = useRef(null);
+  const isPresent = useIsPresent();
   const shouldReduceMotion = useReducedMotion();
   const textBlur = shouldReduceMotion ? "none" : motionBlur();
   const glyphMotion = {
     initial: { filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control) },
     animate: { filter: "none", transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion, ease: MOTION_EASE.inOut }) },
-    exit: { filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control) },
+    exit: {
+      filter: shouldReduceMotion ? "none" : motionBlur(MOTION_BLUR.control),
+      transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }),
+    },
     transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }),
   };
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    const previousFocus = returnFocusRef.current || document.activeElement;
-
-    document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus({ preventScroll: true });
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) {
-        previousFocus.focus({ preventScroll: true });
-      }
-    };
-  }, [returnFocusRef]);
+  useLightboxScene({ returnFocusRef, closeButtonRef, shouldReduceMotion });
 
   useLayoutEffect(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "instant" });
@@ -51,10 +39,10 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
     const handleKeyDown = (event) => {
       if (event.altKey || event.ctrlKey || event.metaKey) return;
 
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && isPresent) {
         event.preventDefault();
         onClose();
-      } else if (canNavigate && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      } else if (isPresent && canNavigate && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
         onNavigate(event.key === "ArrowLeft" ? -1 : 1);
       } else if (event.key === "Tab") {
@@ -76,11 +64,11 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose, onNavigate, canNavigate]);
+  }, [onClose, onNavigate, canNavigate, isPresent]);
 
   const handleTouchStart = (event) => {
     // Let vertical scrolling and multi-touch zoom keep their native behavior.
-    if (!canNavigate || event.touches.length !== 1) {
+    if (!isPresent || !canNavigate || event.touches.length !== 1) {
       touchStartRef.current = null;
       return;
     }
@@ -91,7 +79,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
   const handleTouchEnd = (event) => {
     const start = touchStartRef.current;
     touchStartRef.current = null;
-    if (!start || event.touches.length > 0) return;
+    if (!isPresent || !start || event.touches.length > 0) return;
     const touch = Array.from(event.changedTouches).find((item) => item.identifier === start.id);
     if (!touch) return;
     const dx = touch.clientX - start.x;
@@ -106,7 +94,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
     <motion.div
       initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur }}
       animate={{ opacity: 1, y: 0, filter: "none" }}
-      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 10, filter: textBlur, transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) }}
+      exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, filter: textBlur, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
       onClick={(event) => event.stopPropagation()}
       transition={motionRevealTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
       className={
@@ -134,34 +122,42 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
       aria-modal="true"
       aria-labelledby={`lightbox-title-${img.id}`}
       aria-describedby={`lightbox-description-${img.id}`}
-      className="image-lightbox fixed inset-0 z-[100] text-white backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) }}
-      transition={motionTransition(MOTION_DURATION.surface, { instant: shouldReduceMotion })}
-      onClick={onClose}
+      className="image-lightbox fixed inset-0 z-[100] text-white"
+      onClick={() => { if (isPresent) onClose(); }}
     >
+      <motion.div
+        aria-hidden="true"
+        className="image-lightbox-backdrop pointer-events-none absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: getLightboxExitTransition({ instant: shouldReduceMotion }) }}
+        transition={getLightboxTransition({ instant: shouldReduceMotion })}
+      />
       <motion.button
         ref={closeButtonRef}
         type="button"
         aria-label="Close image preview"
         onClick={(event) => {
           event.stopPropagation();
-          onClose();
+          if (isPresent) onClose();
         }}
         className="lightbox-control fixed right-4 top-4 z-[110] grid size-11 place-items-center text-white/75 motion-color-feedback hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-8 md:top-8"
         initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82 }}
+        exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.82, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
         transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
       >
         <motion.span className="lightbox-control-glyph" {...glyphMotion}><X size={20} /></motion.span>
       </motion.button>
 
       {canNavigate && (
-        <nav
+        <motion.nav
           aria-label="Photo navigation"
           className="pointer-events-none fixed inset-x-0 top-4 z-[110] flex justify-center gap-3 md:top-1/2 md:-translate-y-1/2 md:justify-between md:px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: getLightboxExitTransition({ layer: "detail", instant: shouldReduceMotion }) }}
+          transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
         >
           <button
             type="button"
@@ -169,7 +165,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
             aria-keyshortcuts="ArrowLeft"
             onClick={(event) => {
               event.stopPropagation();
-              onNavigate(-1);
+              if (isPresent) onNavigate(-1);
             }}
             className="lightbox-control pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
@@ -181,20 +177,20 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
             aria-keyshortcuts="ArrowRight"
             onClick={(event) => {
               event.stopPropagation();
-              onNavigate(1);
+              if (isPresent) onNavigate(1);
             }}
             className="lightbox-control pointer-events-auto grid size-11 cursor-pointer place-items-center text-white/75 motion-color-feedback hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             <motion.span className="lightbox-control-glyph" {...glyphMotion}><ChevronRight size={22} aria-hidden="true" /></motion.span>
           </button>
-        </nav>
+        </motion.nav>
       )}
 
       <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
         {img.title}
       </p>
 
-      <div ref={scrollContainerRef} className="h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
+      <div ref={scrollContainerRef} className="lightbox-scroll relative h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
         <div
           className={
             isWide
@@ -202,7 +198,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
               : "flex min-h-full items-start justify-center md:items-center"
           }
         >
-          <motion.div
+          <div
             key={img.id}
             onClick={(event) => event.stopPropagation()}
             onTouchStart={handleTouchStart}
@@ -217,36 +213,14 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef }
                 ? "flex w-full max-w-6xl flex-col items-center gap-5 md:gap-6"
                 : "flex w-full max-w-6xl flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-10 lg:gap-14"
             }
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion })}
           >
-            <motion.div
-              onClick={(event) => event.stopPropagation()}
-              className="w-full max-w-full md:w-auto"
-              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.92, transition: { type: "tween", ...motionTransition(MOTION_DURATION.control, { instant: shouldReduceMotion }) } }}
-              transition={shouldReduceMotion ? { type: "tween", duration: 0 } : { type: "spring", ...MOTION_SPRING.lightbox }}
-            >
-              <Image
-                src={img.src}
-                alt={img.title}
-                width={img.width}
-                height={img.height}
-                sizes={getLightboxImageSizes(img)}
-                priority
-                draggable={false}
-                className={
-                  isWide
-                    ? "h-auto w-full max-w-full object-contain md:max-h-[64vh] md:w-auto"
-                    : "h-auto w-full max-w-full object-contain md:max-h-[82vh] md:w-auto md:max-w-[58vw]"
-                }
-              />
-            </motion.div>
+            <LightboxPhoto
+              img={img}
+              getThumbnail={getThumbnail}
+              shouldReduceMotion={shouldReduceMotion}
+            />
             {textBlock}
-          </motion.div>
+          </div>
         </div>
       </div>
     </motion.div>

@@ -99,6 +99,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
       )}
       <motion.button
         type="button"
+        data-photo-id={id}
         aria-label={`Open ${title}`}
         onClick={(event) => openLightbox(id, event.currentTarget)}
         style={{ y: shouldReduceMotion ? 0 : cardY }}

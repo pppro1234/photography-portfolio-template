@@ -8,18 +8,13 @@ import { m as motion } from "framer-motion";
 import { useIntroMotion } from "./IntroMotionProvider";
 import { galleryCategories, getCategoryHref } from "../lib/gallery-categories.mjs";
 import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../lib/navigation-motion.mjs";
-import { site, contactLinks } from "../lib/site-content";
 import { MOTION_DURATION } from "../lib/motion-tokens.mjs";
+import { site, contactLinks } from "../lib/site-content";
 import ThemeSwitch from "./ThemeSwitch";
 
 const workLinks = [{ slug: "all", label: "All work" }, ...galleryCategories];
-const hasContacts = contactLinks.length > 0;
-const workItemTotal = workLinks.length + 2;
-const mobileAboutIndex = workItemTotal;
-const mobileContactLabelIndex = mobileAboutIndex + 1;
-const mobileContactStart = mobileContactLabelIndex + 1;
-const mobileItemTotal = hasContacts ? mobileContactStart + contactLinks.length : mobileAboutIndex + 1;
-const panelIds = { work: "work-navigation", contact: "contact-navigation", mobile: "mobile-navigation" };
+
+const panelIds = { work: "work-navigation", about: "about-navigation", mobile: "mobile-navigation" };
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -179,12 +174,20 @@ export default function SiteHeader() {
     </Link>
   ));
 
-  const renderContacts = (offset = 2) => contactLinks.map(({ label, href }, index) => (
-    <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={closeMenu}
-      className="nav-stagger" style={{ "--item-index": index + offset }} aria-label={`${label} — ${site.name} (opens in a new tab)`}>
-      <span className="nav-link-label">{label}</span><ArrowUpRight size={14} aria-hidden="true" />
-    </a>
-  ));
+  const renderAboutLinks = (offset = 2) => (
+    <div className="nav-about-links">
+      <Link href="/about" className="nav-bio-link nav-stagger" style={{ "--item-index": offset }}
+        aria-current={pathname === "/about" ? "page" : undefined} onClick={closeMenu}>
+        <span className="nav-link-label">Bio</span>
+      </Link>
+      {contactLinks.map(({ label, href }, index) => (
+        <a key={label} href={href} target="_blank" rel="noopener noreferrer" onClick={closeMenu}
+          className="nav-stagger" style={{ "--item-index": offset + index + 1 }} aria-label={`${label} — ${site.name} (opens in a new tab)`}>
+          <span className="nav-link-label">{label}</span><ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -223,10 +226,8 @@ export default function SiteHeader() {
             <nav className="desktop-navigation" aria-label="Main navigation">
               <button type="button" className="nav-item" data-current={isWork} aria-expanded={menu === "work"} aria-controls={panelIds.work}
                 onPointerEnter={(event) => enterMenu("work", event)} onClick={(event) => selectMenu("work", event)} onKeyDown={(event) => openWithKeyboard("work", event)}><span className="nav-item-label">Work</span></button>
-              <Link href="/about" className="nav-item" aria-current={pathname === "/about" ? "page" : undefined} onClick={closeMenu} onFocus={closeMenu}
-                onPointerEnter={(event) => { if (event.pointerType === "mouse") hoverIntent.schedule(null); }}><span className="nav-item-label">About</span></Link>
-              {hasContacts && <button type="button" className="nav-item" aria-expanded={menu === "contact"} aria-controls={panelIds.contact}
-                onPointerEnter={(event) => enterMenu("contact", event)} onClick={(event) => selectMenu("contact", event)} onKeyDown={(event) => openWithKeyboard("contact", event)}><span className="nav-item-label">Contact</span></button>}
+              <button type="button" className="nav-item" data-current={pathname === "/about"} aria-expanded={menu === "about"} aria-controls={panelIds.about}
+                onPointerEnter={(event) => enterMenu("about", event)} onClick={(event) => selectMenu("about", event)} onKeyDown={(event) => openWithKeyboard("about", event)}><span className="nav-item-label">About</span></button>
             </nav>
             <ThemeSwitch onInteract={() => hoverIntent.cancel()} />
             <button type="button" className="mobile-menu-toggle" aria-label={isMobileOpen ? "Close navigation" : "Open navigation"}
@@ -241,26 +242,25 @@ export default function SiteHeader() {
         </div>
         <div className="nav-expander">
           <div id={panelIds.work} className="nav-panel desktop-panel" data-active={menu === "work"} aria-hidden={menu !== "work"} inert={menu !== "work"}>
-            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.work = element; }} aria-label="Photography categories" style={{ "--item-total": workItemTotal }}>
+            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.work = element; }} aria-label="Photography categories" style={{ "--item-total": workLinks.length + 2 }}>
               <p className="nav-panel-label nav-stagger" style={{ "--item-index": 0 }}>Explore the photographs</p>
               <div className="nav-work-links">{renderWorkLinks()}</div>
             </nav>
           </div>
-          {hasContacts && <div id={panelIds.contact} className="nav-panel desktop-panel" data-active={menu === "contact"} aria-hidden={menu !== "contact"} inert={menu !== "contact"}>
-            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.contact = element; }} aria-label="Contact platforms" style={{ "--item-total": contactLinks.length + 2 }}>
-              <p className="nav-panel-label nav-stagger" style={{ "--item-index": 0 }}>Find {site.name}</p>
-              <div className="nav-contact-links">{renderContacts()}</div>
+          <div id={panelIds.about} className="nav-panel desktop-panel" data-active={menu === "about"} aria-hidden={menu !== "about"} inert={menu !== "about"}>
+            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.about = element; }} aria-label="About and social profiles" style={{ "--item-total": contactLinks.length + 3 }}>
+              <p className="nav-panel-label nav-stagger" style={{ "--item-index": 0 }}>About the studio</p>
+              {renderAboutLinks()}
             </nav>
-          </div>}
+          </div>
           <div id={panelIds.mobile} className="nav-panel mobile-panel" data-active={isMobileOpen} aria-hidden={!isMobileOpen} inert={!isMobileOpen}>
-            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.mobile = element; }} aria-label="Mobile navigation" style={{ "--item-total": mobileItemTotal }}>
+            <nav className="nav-panel-inner" ref={(element) => { panelRefs.current.mobile = element; }} aria-label="Mobile navigation" style={{ "--item-total": workLinks.length + contactLinks.length + 4 }}>
               <p className="nav-panel-label nav-stagger" style={{ "--item-index": 0 }}>Work</p>
               <div className="nav-work-links">{renderWorkLinks()}</div>
-              <Link href="/about" className="mobile-about-link nav-stagger" style={{ "--item-index": mobileAboutIndex }} aria-current={pathname === "/about" ? "page" : undefined} onClick={closeMenu}><span className="nav-link-label">About</span></Link>
-              {hasContacts && <div className="mobile-contact-section">
-                <p className="nav-panel-label nav-stagger" style={{ "--item-index": mobileContactLabelIndex }}>Find me online</p>
-                <div className="nav-contact-links">{renderContacts(mobileContactStart)}</div>
-              </div>}
+              <div className="mobile-about-section">
+                <p className="nav-panel-label nav-stagger" style={{ "--item-index": workLinks.length + 2 }}>About</p>
+                {renderAboutLinks(workLinks.length + 3)}
+              </div>
             </nav>
           </div>
         </div>

@@ -55,12 +55,25 @@
 .gallery-card-button:focus-visible { outline: 2px solid var(--ink-hover); outline-offset: 4px; }
 .lightbox-control-glyph { display: grid; place-items: center; }
 .lightbox-control:focus-visible .lightbox-control-glyph { filter: none !important; }
+#site-scene[data-lightbox-scene] {
+  position: fixed;
+  inset: 0 var(--lightbox-scene-gutter, 0px) 0 0;
+  overflow: hidden;
+  background: var(--background);
+  transform: scale(1);
+  transform-origin: 50% 50%;
+}
 .image-lightbox {
-  background: var(--lightbox-backdrop);
   color-scheme: dark;
   --selection-background: #ffffff;
   --selection-foreground: #000000;
 }
+.image-lightbox-backdrop {
+  background: var(--lightbox-backdrop);
+  -webkit-backdrop-filter: blur(var(--lightbox-backdrop-blur));
+  backdrop-filter: blur(var(--lightbox-backdrop-blur));
+}
+.lightbox-scroll { overflow-anchor: none; }
 
 .gallery-card[data-motion-active="true"] .gallery-photo {
   will-change: transform;

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform } from "framer-motion";
 import ImageLightbox from "./ImageLightbox";
 import { useNearViewport, usePageVisible } from "./useMotionActivity";
@@ -12,7 +13,7 @@ const GalleryContext = createContext(null);
 export const useGalleryMotion = () => useContext(GalleryContext);
 
 // Only mounted while the gallery is near the viewport and the tab is visible.
-function GalleryScrollMotion({ floatProgress, floatScale }) {
+function GalleryScrollMotion({ floatProgress, floatScale, lightboxActiveRef }) {
   const { scrollY } = useScroll();
   const laggedScroll = useSpring(scrollY, MOTION_SPRING.galleryScroll);
   useSpringCleanup(laggedScroll);
@@ -35,17 +36,19 @@ function GalleryScrollMotion({ floatProgress, floatScale }) {
     window.addEventListener("resize", syncScroll);
     return () => {
       unsubscribe();
-      floatProgress.set(0);
+      if (!lightboxActiveRef.current) floatProgress.set(0);
       window.removeEventListener("pageshow", syncScroll);
       window.removeEventListener("resize", syncScroll);
     };
-  }, [scrollY, laggedScroll, progress, floatProgress, floatScale]);
+  }, [scrollY, laggedScroll, progress, floatProgress, floatScale, lightboxActiveRef]);
 
   return null;
 }
 
 export default function GalleryController({ images, children }) {
   const [selectedImage, setSelectedImage] = useState(null);
+  const [isLightboxActive, setIsLightboxActive] = useState(false);
+  const lightboxActiveRef = useRef(false);
   const sectionRef = useRef(null);
   const returnFocusRef = useRef(null);
   const isNearViewport = useNearViewport(sectionRef);
@@ -58,9 +61,19 @@ export default function GalleryController({ images, children }) {
     const image = imagesById.get(id);
     if (!image) return;
     returnFocusRef.current = trigger;
+    lightboxActiveRef.current = true;
+    setIsLightboxActive(true);
     setSelectedImage(image);
   }, [imagesById]);
   const closeLightbox = useCallback(() => setSelectedImage(null), []);
+  const finishLightbox = useCallback(() => {
+    lightboxActiveRef.current = false;
+    setIsLightboxActive(false);
+  }, []);
+  const getThumbnail = useCallback((id) => {
+    const thumbnails = sectionRef.current?.querySelectorAll("[data-photo-id]");
+    return Array.from(thumbnails || []).find((thumbnail) => thumbnail.dataset.photoId === String(id)) || null;
+  }, []);
   const navigateLightbox = useCallback((direction) => {
     setSelectedImage((currentImage) => {
       if (!currentImage || images.length < 2) return currentImage;
@@ -69,18 +82,18 @@ export default function GalleryController({ images, children }) {
     });
   }, [images]);
   const context = useMemo(() => ({
-    floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion,
-  }), [floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion]);
+    floatProgress, floatScale, openLightbox, isPageVisible: isPageVisible && !isLightboxActive, shouldReduceMotion,
+  }), [floatProgress, floatScale, openLightbox, isPageVisible, isLightboxActive, shouldReduceMotion]);
 
   return (
     <GalleryContext.Provider value={context}>
-      {isNearViewport && isPageVisible && !shouldReduceMotion && (
-        <GalleryScrollMotion floatProgress={floatProgress} floatScale={floatScale} />
+      {isNearViewport && isPageVisible && !isLightboxActive && !shouldReduceMotion && (
+        <GalleryScrollMotion floatProgress={floatProgress} floatScale={floatScale} lightboxActiveRef={lightboxActiveRef} />
       )}
       <section ref={sectionRef} aria-label="Selected photographs" className="gallery-layout w-full max-w-[1400px] mx-auto px-4 md:px-8 pb-16 md:pb-24">
         {children}
       </section>
-      <AnimatePresence>
+      {isLightboxActive && createPortal(<AnimatePresence onExitComplete={finishLightbox}>
         {selectedImage && (
           <ImageLightbox
             img={selectedImage}
@@ -88,9 +101,10 @@ export default function GalleryController({ images, children }) {
             onNavigate={navigateLightbox}
             canNavigate={images.length > 1}
             returnFocusRef={returnFocusRef}
+            getThumbnail={getThumbnail}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence>, document.body)}
     </GalleryContext.Provider>
   );
 }

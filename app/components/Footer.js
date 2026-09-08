@@ -16,7 +16,7 @@ export default function Footer() {
           </p>
         </div>
         <nav aria-label="Footer navigation" className="footer-navigation">
-          <div className="footer-link-group footer-work-group">
+          <div className="footer-link-group">
             <h4 className="footer-group-title">Work</h4>
             <ul>
               {workLinks.map(({ slug, label }) => (
@@ -25,12 +25,9 @@ export default function Footer() {
             </ul>
           </div>
           <div className="footer-link-group">
-            <h4 className="footer-group-title">Studio</h4>
-            <ul><li><Link href="/about" className="footer-link"><span className="footer-link-label">About</span></Link></li></ul>
-          </div>
-          {contactLinks.length > 0 && <div className="footer-link-group">
-            <h4 className="footer-group-title">Contact</h4>
+            <h4 className="footer-group-title">About</h4>
             <ul>
+              <li><Link href="/about" className="footer-link"><span className="footer-link-label">About the studio</span></Link></li>
               {contactLinks.map(({ label, href }) => (
                 <li key={label}><a href={href} target="_blank" rel="noopener noreferrer" className="footer-link"
                   aria-label={`${label} — ${site.name} (opens in a new tab)`}>
@@ -38,7 +35,7 @@ export default function Footer() {
                 </a></li>
               ))}
             </ul>
-          </div>}
+          </div>
         </nav>
       </div>
       <div className="footer-copyright text-xs text-neutral-400 uppercase tracking-wider">

@@ -95,5 +95,5 @@ test("footer group headings are distinct from links without sacrificing contrast
   assert.ok((luminance(link) + 0.05) / 0.05 >= 4.5);
   assert.ok(luminance(link) > luminance(heading) * 2);
   const footer = readFileSync(new URL("../app/components/Footer.js", import.meta.url), "utf8");
-  assert.equal((footer.match(/<h4 className="footer-group-title">(?:Work|Studio|Contact)<\/h4>/g) || []).length, 3);
+  assert.deepEqual([...footer.matchAll(/<h4 className="footer-group-title">([^<]+)<\/h4>/g)].map((match) => match[1]), ["Work", "About"]);
 });

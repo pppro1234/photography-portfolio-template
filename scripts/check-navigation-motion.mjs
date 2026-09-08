@@ -3,15 +3,15 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_HOVER_DELAY, NAV_OPEN_DURATION, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../app/lib/navigation-motion.mjs";
 
-test("Work, Contact and mobile About use the same navigation typography", () => {
+test("Work and About links use the same navigation typography", () => {
   const css = readFileSync(new URL("../app/navigation.css", import.meta.url), "utf8");
-  const selector = ".nav-work-links a, .nav-contact-links a, .mobile-about-link";
+  const selector = ".nav-work-links a, .nav-about-links a";
   const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
   const shared = blocks.find(([, selectors, declarations]) => selectors.trim() === selector && declarations.includes("font-size"))?.[2];
   assert.ok(shared);
   for (const declaration of ["font-family: inherit", "font-size: 20px", "font-weight: 300", "line-height: 1.5", "letter-spacing: normal"]) assert.ok(shared.includes(declaration));
   for (const [, selectors, declarations] of blocks) {
-    if ((selectors.includes(".nav-work-links a") || selectors.includes(".nav-contact-links a")) && /font(?:-family|-size|-weight)?:|line-height:|letter-spacing:/.test(declarations)) {
+    if ((selectors.includes(".nav-work-links a") || selectors.includes(".nav-about-links a")) && /font(?:-family|-size|-weight)?:|line-height:|letter-spacing:/.test(declarations)) {
       assert.equal(selectors.trim(), selector);
     }
   }
@@ -40,7 +40,7 @@ test("opening and closing retain explicit phases for the exit animation", () => 
 });
 
 test("switching flyouts uses the crossfade phase instead of replaying entrance stagger", () => {
-  assert.deepEqual(navigationReducer({ menu: "work", phase: "open" }, { type: "select", menu: "contact" }), { menu: "contact", phase: "switching" });
+  assert.deepEqual(navigationReducer({ menu: "work", phase: "open" }, { type: "select", menu: "about" }), { menu: "about", phase: "switching" });
 });
 
 test("white panel height gets a longer transition than the text crossfade", () => {
@@ -74,29 +74,29 @@ test("only desktop entrance can overshoot and the viewport bounds the animated p
 
 test("opening can switch, close and reopen without accepting stale completion events", () => {
   let state = navigationReducer(initialNavigationState, { type: "select", menu: "work" });
-  state = navigationReducer(state, { type: "select", menu: "contact" });
+  state = navigationReducer(state, { type: "select", menu: "about" });
   assert.equal(state.phase, "switching");
   state = navigationReducer(state, { type: "select", menu: null });
   assert.equal(state.phase, "closing");
   state = navigationReducer(state, { type: "select", menu: "work" });
   assert.equal(state.phase, "opening");
-  assert.equal(navigationReducer(state, { type: "settle", menu: "contact", phase: "switching" }), state);
+  assert.equal(navigationReducer(state, { type: "settle", menu: "about", phase: "switching" }), state);
   assert.equal(navigationReducer(state, { type: "settle", menu: null, phase: "closing" }), state);
 });
 
-test("Work to Contact to Work reverses without closing the white panel", () => {
-  const contact = navigationReducer({ menu: "work", phase: "open" }, { type: "select", menu: "contact" });
-  const work = navigationReducer(contact, { type: "select", menu: "work" });
+test("Work to About to Work reverses without closing the white panel", () => {
+  const about = navigationReducer({ menu: "work", phase: "open" }, { type: "select", menu: "about" });
+  const work = navigationReducer(about, { type: "select", menu: "work" });
   assert.deepEqual(work, { menu: "work", phase: "switching" });
-  assert.equal(navigationReducer(work, { type: "settle", menu: "contact", phase: "switching" }), work);
+  assert.equal(navigationReducer(work, { type: "settle", menu: "about", phase: "switching" }), work);
   assert.deepEqual(navigationReducer(work, { type: "settle", menu: "work", phase: "switching" }), { menu: "work", phase: "open" });
 });
 
 test("closing interrupts a switch and ignores the old switch completion", () => {
-  const switching = { menu: "contact", phase: "switching" };
+  const switching = { menu: "about", phase: "switching" };
   const closing = navigationReducer(switching, { type: "select", menu: null });
   assert.deepEqual(closing, { menu: null, phase: "closing" });
-  assert.equal(navigationReducer(closing, { type: "settle", menu: "contact", phase: "switching" }), closing);
+  assert.equal(navigationReducer(closing, { type: "settle", menu: "about", phase: "switching" }), closing);
 });
 
 test("hovering or clicking an already open flyout does not restart it", () => {
@@ -105,9 +105,9 @@ test("hovering or clicking an already open flyout does not restart it", () => {
 });
 
 test("stale settling actions cannot end a newly opened or switching animation", () => {
-  const switched = { menu: "contact", phase: "switching" };
+  const switched = { menu: "about", phase: "switching" };
   assert.equal(navigationReducer(switched, { type: "settle", menu: "work", phase: "opening" }), switched);
-  assert.equal(navigationReducer(switched, { type: "settle", menu: "contact", phase: "opening" }), switched);
+  assert.equal(navigationReducer(switched, { type: "settle", menu: "about", phase: "opening" }), switched);
   assert.equal(navigationReducer(switched, { type: "settle", menu: null, phase: "closing" }), switched);
 });
 
@@ -136,10 +136,10 @@ test("hover waits 120ms and quick crossings select only the last intended menu",
   assert.equal([...clock.pending.values()][0].delay, 120);
   assert.deepEqual(selected, []);
   intent.schedule(null);
-  intent.schedule("contact");
+  intent.schedule("about");
   assert.equal(clock.pending.size, 1);
   clock.flush();
-  assert.deepEqual(selected, ["contact"]);
+  assert.deepEqual(selected, ["about"]);
 });
 
 test("default hover timers retain the browser global receiver", () => {
@@ -162,10 +162,10 @@ test("default hover timers retain the browser global receiver", () => {
   try {
     const intent = createHoverIntent((menu) => selected.push(menu));
     intent.schedule("work");
-    intent.schedule("contact");
+    intent.schedule("about");
     assert.equal(cancellations, 1);
     pending();
-    assert.deepEqual(selected, ["contact"]);
+    assert.deepEqual(selected, ["about"]);
     intent.schedule("work");
     intent.cancel();
     assert.equal(pending, undefined);
@@ -183,7 +183,7 @@ test("pointer exit, Escape, navigation and unmount can cancel a queued hover", (
   intent.cancel();
   clock.flush();
   assert.deepEqual(selected, []);
-  intent.schedule("contact");
+  intent.schedule("about");
   clock.flush();
-  assert.deepEqual(selected, ["contact"]);
+  assert.deepEqual(selected, ["about"]);
 });

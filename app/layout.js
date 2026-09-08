@@ -36,10 +36,14 @@ export default function RootLayout({ children }) {
       <head><script id="theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} /></head>
       <body className="antialiased">
         <MotionProvider>
-          <SiteHeader />
-          <div id="site-content">
-            {children}
-            <Footer />
+          <div id="site-stage">
+            <div id="site-scene">
+              <SiteHeader />
+              <div id="site-content">
+                {children}
+                <Footer />
+              </div>
+            </div>
           </div>
         </MotionProvider>
       </body>
