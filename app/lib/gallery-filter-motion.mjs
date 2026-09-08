@@ -1,7 +1,12 @@
-import { galleryCategories, getCategoryHref } from "./gallery-categories.mjs";
+import { galleryCategories, getCategoryHref, getGalleryCategory } from "./gallery-categories.mjs";
 
 export function isGalleryCategoryPath(pathname) {
   return galleryCategories.some(({ slug }) => getCategoryHref(slug) === pathname);
+}
+
+export function shouldAnimateSeriesIntro(previous, category, reducedMotion = false) {
+  return !reducedMotion && previous?.category !== category
+    && !!getGalleryCategory(previous?.category) && !!getGalleryCategory(category);
 }
 
 // Coordinates are relative to the scrollable track, not the viewport.

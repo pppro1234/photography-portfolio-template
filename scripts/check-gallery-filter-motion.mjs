@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { getFilterBounds, getFilterMotionStart, getFilterScrollLeft, isGalleryCategoryPath } from "../app/lib/gallery-filter-motion.mjs";
+import { getFilterBounds, getFilterMotionStart, getFilterScrollLeft, isGalleryCategoryPath, shouldAnimateSeriesIntro } from "../app/lib/gallery-filter-motion.mjs";
 import { galleryCategories, getCategoryHref } from "../app/lib/gallery-categories.mjs";
 
 const source = (path) => readFileSync(new URL(`../app/${path}`, import.meta.url), "utf8");
@@ -9,6 +9,23 @@ const target = { x: 220, y: 35, width: 84 };
 const previousTarget = { x: 104, y: 35, width: 76 };
 const previous = { category: "cityscape", trackWidth: 600, bounds: { x: 145, y: 35, width: 79 } };
 const options = { category: "landscape", trackWidth: 600, target, previousTarget, reducedMotion: false };
+
+test("series copy transitions across configured categories, including reverse and interrupted navigation", () => {
+  for (const from of galleryCategories) {
+    for (const to of galleryCategories) {
+      assert.equal(shouldAnimateSeriesIntro({ category: from.slug }, to.slug), from.slug !== to.slug);
+      assert.equal(shouldAnimateSeriesIntro({ category: from.slug }, to.slug, true), false);
+    }
+  }
+  for (const category of galleryCategories) {
+    for (const previous of [null, { category: "all" }, { category: "unknown" }]) {
+      assert.equal(shouldAnimateSeriesIntro(previous, category.slug), false);
+    }
+    for (const destination of ["all", "unknown", undefined]) {
+      assert.equal(shouldAnimateSeriesIntro({ category: category.slug }, destination), false);
+    }
+  }
+});
 
 test("only real category routes retain filter history; home and About clear it", () => {
   for (const { slug } of galleryCategories) assert.ok(isGalleryCategoryPath(getCategoryHref(slug)));
