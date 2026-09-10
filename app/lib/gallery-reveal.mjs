@@ -1,10 +1,46 @@
 import { MOTION_DELAY } from "./motion-tokens.mjs";
 
-export const GALLERY_REVEAL_VIEWPORT = Object.freeze({
-  once: true,
-  amount: "some",
-  margin: "0px 0px 120px 0px",
-});
+const revealThreshold = 0.03;
+const revealCallbacks = new Map();
+let revealObserver;
+
+function releaseRevealObserver() {
+  if (revealCallbacks.size === 0) {
+    revealObserver?.disconnect();
+    revealObserver = undefined;
+  }
+}
+
+export function observeGalleryReveal(element, onReveal) {
+  if (typeof IntersectionObserver === "undefined") {
+    onReveal();
+    return () => {};
+  }
+  if (!revealObserver) {
+    const observer = new IntersectionObserver((entries) => {
+      if (revealObserver !== observer) return;
+      for (const entry of entries) {
+        // isIntersecting can be true before the configured ratio is reached.
+        if (!entry.isIntersecting || entry.intersectionRatio < revealThreshold) continue;
+        const callback = revealCallbacks.get(entry.target);
+        if (!callback) continue;
+        revealCallbacks.delete(entry.target);
+        observer.unobserve(entry.target);
+        callback();
+      }
+      releaseRevealObserver();
+    }, { rootMargin: "0px", threshold: revealThreshold });
+    revealObserver = observer;
+  }
+  revealCallbacks.set(element, onReveal);
+  revealObserver.observe(element);
+  return () => {
+    if (revealCallbacks.get(element) !== onReveal) return;
+    revealCallbacks.delete(element);
+    revealObserver?.unobserve(element);
+    releaseRevealObserver();
+  };
+}
 
 const initialRowRanks = new WeakMap();
 
@@ -18,7 +54,7 @@ export function getGalleryRevealDelay(element, indexInRow, scrollY, viewportHeig
   if (!element?.parentElement) return 0;
   const grid = element.parentElement;
   if (!initialRowRanks.has(grid)) {
-    // Capture the real viewport once, without the observer's lead-in region.
+    // Capture the real viewport once, independently of animation transforms.
     // Later scroll entrances must not queue behind rows already on screen.
     const visible = Array.from(grid.children, (card) => ({ card, top: documentTop(card) }))
       .filter(({ card, top }) => top < scrollY + viewportHeight && top + card.clientHeight > scrollY);

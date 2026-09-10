@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { m as motion, useAnimationControls, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { getCardScrollProgress } from "../lib/near-viewport.mjs";
-import { GALLERY_REVEAL_VIEWPORT, getGalleryRevealDelay } from "../lib/gallery-reveal.mjs";
+import { observeGalleryReveal, getGalleryRevealDelay } from "../lib/gallery-reveal.mjs";
 import { useGalleryMotion } from "./GalleryController";
 import { useNearViewport } from "./useMotionActivity";
 import { useSpringCleanup } from "./useSpringCleanup";
@@ -56,6 +56,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
   const [isFocused, setIsFocused] = useState(false);
   const revealControls = useAnimationControls();
   const revealDelay = useRef(null);
+  const revealStarted = useRef(false);
   const isNearViewport = useNearViewport(cardRef);
   const { floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature } = useGalleryMotion();
   const displayIndex = indicesById.get(id) ?? index;
@@ -65,6 +66,22 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
   const imageY = useMotionValue("-2%");
   const isActive = isPageVisible && !shouldReduceMotion && (isNearViewport || isFocused);
   const floatDistance = isWideThumbnail ? 6 : displayIndex % 2 === 1 ? 10 : 8;
+
+  useLayoutEffect(() => {
+    if (shouldReduceMotion) {
+      revealStarted.current = true;
+      revealControls.stop();
+      revealControls.set({ opacity: 1, y: 0 });
+      return;
+    }
+    if (revealStarted.current || !isPageVisible || !cardRef.current) return;
+    return observeGalleryReveal(cardRef.current, () => {
+      if (revealStarted.current) return;
+      revealStarted.current = true;
+      revealControls.start("visible");
+    });
+  }, [isPageVisible, isFocused, shouldReduceMotion, revealControls]);
+
   const resolveRevealDelay = () => {
     if (shouldReduceMotion || !cardRef.current) return 0;
     if (document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return 0;
@@ -74,27 +91,13 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
   };
 
   return (
-    <motion.div
+    <div
       ref={cardRef}
-      className={`gallery-reveal gallery-card ${isWideThumbnail ? "gallery-card-wide" : ""}`}
+      className={`gallery-card ${isWideThumbnail ? "gallery-card-wide" : ""}`}
       data-motion-active={isActive ? "true" : undefined}
-      initial={shouldReduceMotion ? false : "hidden"}
-      animate={revealControls}
-      whileInView="visible"
-      viewport={GALLERY_REVEAL_VIEWPORT}
-      variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: () => ({
-          opacity: 1,
-          y: 0,
-          transition: motionTransition(MOTION_DURATION.content, {
-            instant: shouldReduceMotion,
-            delay: resolveRevealDelay(),
-          }),
-        }),
-      }}
       onFocusCapture={() => {
         setIsFocused(true);
+        revealStarted.current = true;
         revealControls.stop();
         revealControls.set({ opacity: 1, y: 0 });
       }}
@@ -102,30 +105,47 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
         if (!event.currentTarget.contains(event.relatedTarget)) setIsFocused(false);
       }}
     >
-      {isActive && (
-        <CardParallax
-          cardRef={cardRef}
-          floatProgress={floatProgress}
-          floatScale={floatScale}
-          floatDistance={floatDistance}
-          cardY={cardY}
-          imageY={imageY}
-          layoutSignature={layoutSignature}
-        />
-      )}
-      <motion.button
-        type="button"
-        data-photo-id={id}
-        aria-label={`Open ${title}`}
-        onClick={(event) => openLightbox(id, event.currentTarget)}
-        style={{ y: shouldReduceMotion ? 0 : cardY }}
-        className="gallery-card-button group relative block h-full w-full min-h-0 min-w-0 overflow-hidden text-left cursor-zoom-in"
+      <motion.div
+        className="gallery-reveal"
+        initial={shouldReduceMotion ? false : "hidden"}
+        animate={revealControls}
+        variants={{
+          hidden: { opacity: 0, y: 24 },
+          visible: () => ({
+            opacity: 1,
+            y: 0,
+            transition: motionTransition(MOTION_DURATION.content, {
+              instant: shouldReduceMotion,
+              delay: resolveRevealDelay(),
+            }),
+          }),
+        }}
       >
-        <motion.div className="gallery-image" style={{ y: shouldReduceMotion ? 0 : imageY }}>
-          {children}
-        </motion.div>
-        {caption}
-      </motion.button>
-    </motion.div>
+        {isActive && (
+          <CardParallax
+            cardRef={cardRef}
+            floatProgress={floatProgress}
+            floatScale={floatScale}
+            floatDistance={floatDistance}
+            cardY={cardY}
+            imageY={imageY}
+            layoutSignature={layoutSignature}
+          />
+        )}
+        <motion.button
+          type="button"
+          data-photo-id={id}
+          aria-label={`Open ${title}`}
+          onClick={(event) => openLightbox(id, event.currentTarget)}
+          style={{ y: shouldReduceMotion ? 0 : cardY }}
+          className="gallery-card-button group relative block h-full w-full min-h-0 min-w-0 overflow-hidden text-left cursor-zoom-in"
+        >
+          <motion.div className="gallery-image" style={{ y: shouldReduceMotion ? 0 : imageY }}>
+            {children}
+          </motion.div>
+          {caption}
+        </motion.button>
+      </motion.div>
+    </div>
   );
 }

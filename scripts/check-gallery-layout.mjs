@@ -41,11 +41,11 @@ test("restored or scrolled galleries restart timing at the first visible row", (
   assert.equal(getGalleryRevealDelay(null, 0, 0, 800), 0);
 });
 
-test("approaching and newly scrolled rows do not wait for the initial visible rows", () => {
+test("newly scrolled rows do not wait for the initial visible rows", () => {
   const cards = makeRows(5, 6);
   assert.equal(getGalleryRevealDelay(cards[0], 0, 0, 650), 0);
   assert.equal(getGalleryRevealDelay(cards[6], 0, 0, 650), 160);
-  // The next row starts 50px below the real viewport, inside the lead-in area.
+  // The next row starts outside the initial viewport and has no stored row delay.
   assert.equal(getGalleryRevealDelay(cards[12], 0, 0, 650), 0);
   assert.equal(getGalleryRevealDelay(cards[17], 5, 0, 650), 150);
   // Previous rows remain visible after scrolling, but add no new row delay.

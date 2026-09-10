@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getCardScrollProgress, observeNearViewport } from "../app/lib/near-viewport.mjs";
 import { createReducedMotionStore } from "../app/lib/reduced-motion.mjs";
+import { observeGalleryReveal } from "../app/lib/gallery-reveal.mjs";
 
 test("motion preferences reflect live changes and detach listeners on cleanup", () => {
   const media = new EventTarget();
@@ -27,7 +28,7 @@ const createElement = (top, bottom = top + 100) => ({
   getBoundingClientRect: () => ({ top, bottom }),
 });
 
-function mockViewport(t, { height = 800, supportsObserver = true } = {}) {
+function mockViewport(t, { height = 800, supportsObserver = true, observe = observeNearViewport } = {}) {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const previousObserver = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver");
   const instances = [];
@@ -82,7 +83,7 @@ function mockViewport(t, { height = 800, supportsObserver = true } = {}) {
   return {
     instances,
     subscribe(element, onChange) {
-      const unsubscribe = observeNearViewport(element, onChange);
+      const unsubscribe = observe(element, onChange);
       subscriptions.add(unsubscribe);
       return () => {
         subscriptions.delete(unsubscribe);
@@ -91,6 +92,42 @@ function mockViewport(t, { height = 800, supportsObserver = true } = {}) {
     },
   };
 }
+
+test("gallery entrances wait for 3% visibility and never run outside the viewport", (t) => {
+  const { instances, subscribe } = mockViewport(t, { observe: observeGalleryReveal });
+  const card = createElement(900);
+  let starts = 0;
+  subscribe(card, () => starts++);
+  const observer = instances[0];
+  assert.deepEqual(observer.options, { rootMargin: "0px", threshold: 0.03 });
+  for (const ratio of [0, 0.01, 0.029]) {
+    observer.emit([{ target: card, isIntersecting: ratio > 0, intersectionRatio: ratio }]);
+  }
+  assert.equal(starts, 0);
+  observer.emit([{ target: card, isIntersecting: true, intersectionRatio: 0.03 }]);
+  assert.equal(starts, 1);
+  observer.emit([{ target: card, isIntersecting: true, intersectionRatio: 1 }]);
+  assert.equal(starts, 1, "an entrance runs only once");
+  assert.equal(observer.observed.size, 0);
+  assert.equal(observer.disconnectCount, 1);
+});
+
+test("gallery reveal subscriptions share an observer and ignore suspended queued entries", (t) => {
+  const { instances, subscribe } = mockViewport(t, { observe: observeGalleryReveal });
+  const first = createElement(900), second = createElement(1200);
+  let starts = 0;
+  const stopFirst = subscribe(first, () => starts++);
+  const stopSecond = subscribe(second, () => starts++);
+  assert.equal(instances.length, 1);
+  const oldObserver = instances[0];
+  stopFirst();
+  stopSecond();
+  subscribe(first, () => starts++);
+  oldObserver.emit([{ target: first, isIntersecting: true, intersectionRatio: 1 }]);
+  assert.equal(starts, 0);
+  instances[1].emit([{ target: first, isIntersecting: true, intersectionRatio: 0.05 }]);
+  assert.equal(starts, 1);
+});
 
 test("many cards share one observer and its 300px viewport buffer", (t) => {
   const { instances, subscribe } = mockViewport(t);

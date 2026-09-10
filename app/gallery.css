@@ -57,8 +57,8 @@
 
 /* The card is the query container. Both spans share a 3:4 portrait row,
    including rows made entirely of wide images, without measuring in JS. */
-.gallery-card > .gallery-card-button { height: calc(100cqw * 4 / 3); }
-.gallery-card-wide > .gallery-card-button { height: calc((100cqw - var(--gallery-gap)) * 2 / 3); }
+.gallery-card > .gallery-reveal { height: calc(100cqw * 4 / 3); }
+.gallery-card-wide > .gallery-reveal { height: calc((100cqw - var(--gallery-gap)) * 2 / 3); }
 .gallery-card-caption { padding: clamp(12px, 7cqw, 24px); }
 .gallery-caption h3 { font-size: clamp(14px, 8cqw, 22px); }
 
