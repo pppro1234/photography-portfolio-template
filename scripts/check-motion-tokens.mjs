@@ -122,5 +122,5 @@ test("image hover uses scoped properties and keyboard content remains immediatel
   assert.doesNotMatch(card, /transition-all|duration-\d+|ease-\[/);
   const css = source("gallery.css");
   assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)/);
-  assert.match(css, /\.gallery-card:focus-within \.gallery-caption \{[^}]*transition: none/);
+  assert.match(css, /\.gallery-card-button:focus-visible \.gallery-caption \{[^}]*transition: none/);
 });

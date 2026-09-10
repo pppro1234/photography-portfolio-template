@@ -151,7 +151,7 @@ test("gallery blur affects hover captions, not photographs or their continuous s
   const css = source("gallery.css");
   assert.match(css, /\.gallery-caption \{[^}]*filter: blur\(var\(--motion-blur-content\)\)/);
   assert.match(css, /\.gallery-card:hover \.gallery-caption \{[^}]*filter: none/);
-  assert.match(css, /\.gallery-card:focus-within \.gallery-caption \{[^}]*filter: none; transition: none/);
+  assert.match(css, /\.gallery-card-button:focus-visible \.gallery-caption \{[^}]*filter: none; transition: none/);
   for (const component of ["GalleryCardMotion.js", "GalleryController.js", "ImageCard.js"]) {
     assert.doesNotMatch(source(`components/${component}`), /motionBlur|\bfilter:/);
   }

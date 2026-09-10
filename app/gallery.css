@@ -177,8 +177,8 @@
   .gallery-card:hover .gallery-caption { transform: translateY(0); opacity: 1; filter: none; transition-timing-function: var(--motion-ease-out), var(--motion-ease-out), var(--motion-ease-in-out); }
 }
 @media (min-width: 768px) {
-  .gallery-card:focus-within .gallery-shade { background-color: rgb(0 0 0 / 35%); }
-  .gallery-card:focus-within .gallery-caption { transform: none; opacity: 1; filter: none; transition: none; }
+  .gallery-card-button:focus-visible .gallery-shade { background-color: rgb(0 0 0 / 35%); }
+  .gallery-card-button:focus-visible .gallery-caption { transform: none; opacity: 1; filter: none; transition: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
