@@ -8,6 +8,7 @@ import ImageLightbox from "./ImageLightbox";
 import { useNearViewport, usePageVisible } from "./useMotionActivity";
 import { useSpringCleanup } from "./useSpringCleanup";
 import { MOTION_SPRING } from "../lib/motion-tokens.mjs";
+import { useGalleryLayout } from "./useGalleryLayout";
 
 const GalleryContext = createContext(null);
 
@@ -46,11 +47,12 @@ function GalleryScrollMotion({ floatProgress, floatScale, lightboxActiveRef }) {
   return null;
 }
 
-export default function GalleryController({ images, children }) {
+export default function GalleryController({ images, children, portraitFrameRatio }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isLightboxActive, setIsLightboxActive] = useState(false);
   const lightboxActiveRef = useRef(false);
   const sectionRef = useRef(null);
+  const { columnSpansById, indicesInRowById, layoutSignature } = useGalleryLayout(sectionRef, images);
   const returnFocusRef = useRef(null);
   const isNearViewport = useNearViewport(sectionRef);
   const isPageVisible = usePageVisible();
@@ -58,6 +60,7 @@ export default function GalleryController({ images, children }) {
   const floatProgress = useMotionValue(0);
   const floatScale = useMotionValue(1);
   const imagesById = useMemo(() => new Map(images.map((img) => [img.id, img])), [images]);
+  const indicesById = useMemo(() => new Map(images.map(({ id }, index) => [id, index])), [images]);
   const openLightbox = useCallback((id, trigger) => {
     const image = imagesById.get(id);
     if (!image) return;
@@ -88,8 +91,8 @@ export default function GalleryController({ images, children }) {
     });
   }, [images]);
   const context = useMemo(() => ({
-    floatProgress, floatScale, openLightbox, isPageVisible: isPageVisible && !isLightboxActive, shouldReduceMotion,
-  }), [floatProgress, floatScale, openLightbox, isPageVisible, isLightboxActive, shouldReduceMotion]);
+    floatProgress, floatScale, openLightbox, isPageVisible: isPageVisible && !isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature,
+  }), [floatProgress, floatScale, openLightbox, isPageVisible, isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature]);
 
   return (
     <GalleryContext.Provider value={context}>
@@ -103,6 +106,7 @@ export default function GalleryController({ images, children }) {
         {selectedImage && (
           <ImageLightbox
             img={selectedImage}
+            portraitFrameRatio={portraitFrameRatio}
             onClose={closeLightbox}
             onNavigate={navigateLightbox}
             canNavigate={images.length > 1}

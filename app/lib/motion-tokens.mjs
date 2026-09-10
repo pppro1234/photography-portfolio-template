@@ -14,6 +14,8 @@ export const MOTION_DURATION = Object.freeze({
 export const MOTION_DELAY = Object.freeze({
   item: 20,
   paragraph: 60,
+  gallery: 30,
+  galleryRow: 160,
   navigation: 80,
   mobile: 200,
 });

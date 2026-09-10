@@ -1,5 +1,6 @@
 .gallery-layout {
   container-type: inline-size;
+  --gallery-gap: clamp(8px, 1.2vw, 16px);
 }
 
 .work-page { color: var(--work-foreground); }
@@ -35,9 +36,10 @@
 }
 
 .gallery-grid {
-  --gallery-gap: 8px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Keep the same scale in short series; empty tracks must not collapse.
+     Two minimum tracks also keep wide photographs contained on phones. */
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, calc((100% - var(--gallery-gap)) / 2)), 1fr));
   gap: var(--gallery-gap);
 }
 
@@ -46,13 +48,19 @@
   width: 100%;
   min-width: 0;
   min-height: 0;
-  aspect-ratio: 3 / 4;
+  container-type: inline-size;
 }
 
 .gallery-card-wide {
   grid-column: span 2;
-  aspect-ratio: 16 / 10;
 }
+
+/* The card is the query container. Both spans share a 3:4 portrait row,
+   including rows made entirely of wide images, without measuring in JS. */
+.gallery-card > .gallery-card-button { height: calc(100cqw * 4 / 3); }
+.gallery-card-wide > .gallery-card-button { height: calc((100cqw - var(--gallery-gap)) * 2 / 3); }
+.gallery-card-caption { padding: clamp(12px, 7cqw, 24px); }
+.gallery-caption h3 { font-size: clamp(14px, 8cqw, 22px); }
 
 .gallery-image {
   position: absolute;
@@ -81,7 +89,77 @@
   -webkit-backdrop-filter: blur(var(--lightbox-backdrop-blur));
   backdrop-filter: blur(var(--lightbox-backdrop-blur));
 }
-.lightbox-scroll { overflow-anchor: none; }
+.lightbox-scroll {
+  overflow-anchor: none;
+  container-type: inline-size;
+  --lightbox-portrait-height: calc(100cqw / var(--lightbox-portrait-ratio));
+  --lightbox-caption-reserve: 84px;
+}
+.lightbox-portrait-content { --lightbox-image-height: var(--lightbox-portrait-height); }
+.lightbox-square-content { --lightbox-image-height: 100cqw; }
+.lightbox-landscape-content { --lightbox-image-height: calc(100cqw * 2 / 3); }
+.lightbox-portrait-content, .lightbox-stacked-content {
+  /* Center the reference photo plus a title and two description lines.
+     Longer captions flow below without moving the photo or caption start. */
+  padding-top: max(0px, calc((100dvh - 104px - var(--lightbox-image-height) - 24px - var(--lightbox-caption-reserve)) / 2));
+}
+.lightbox-photo-portrait {
+  flex: none;
+  height: var(--lightbox-portrait-height);
+}
+.lightbox-photo-portrait > img:not([aria-hidden]) {
+  height: 100%;
+  width: auto;
+  max-width: none;
+  margin-inline: auto;
+}
+.lightbox-portrait-content > .motion-blur-content { min-width: 0; }
+.lightbox-stacked-content > .motion-blur-content { flex: none; }
+.lightbox-photo-stacked {
+  flex: none;
+  height: var(--lightbox-image-height);
+}
+.lightbox-photo-stacked > img:not([aria-hidden]) {
+  width: min(100%, calc(var(--lightbox-image-height) * var(--lightbox-photo-ratio)));
+  height: auto;
+  margin-inline: auto;
+}
+/* Cached preview and full photo share the same top edge during loading. */
+.lightbox-photo-stacked > img { object-position: center top; }
+
+@media (min-width: 640px) {
+  .lightbox-scroll { --lightbox-caption-reserve: 91.5px; }
+}
+
+@media (min-width: 768px) {
+  .lightbox-scroll {
+    --lightbox-portrait-gap: 40px;
+    --lightbox-portrait-height: min(82dvh, calc((min(1152px, 100cqw) - var(--lightbox-portrait-gap) - 288px) / var(--lightbox-portrait-ratio)));
+  }
+  .lightbox-portrait-content {
+    display: grid;
+    grid-template-columns: calc(var(--lightbox-portrait-height) * var(--lightbox-portrait-ratio)) minmax(0, 448px);
+    justify-content: center;
+    gap: var(--lightbox-portrait-gap);
+    height: var(--lightbox-portrait-height);
+    padding-top: 0;
+  }
+  .lightbox-stacked-content {
+    /* Keep both the photo top and the independent caption row stable across
+       square and landscape images, within the portrait's vertical bounds. */
+    --lightbox-image-height: max(0px, calc(var(--lightbox-portrait-height) - 24px - var(--lightbox-caption-reserve)));
+    height: var(--lightbox-portrait-height);
+    padding-top: 0;
+  }
+  .lightbox-stacked-content > .motion-blur-content {
+    max-height: var(--lightbox-caption-reserve);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lightbox-scroll { --lightbox-portrait-gap: 56px; }
+}
 
 .gallery-card[data-motion-active="true"] .gallery-photo {
   will-change: transform;
@@ -112,24 +190,4 @@
   .gallery-photo, .gallery-shade, .gallery-caption { transition: none !important; }
   .gallery-photo, .gallery-caption { transform: none !important; }
   .gallery-caption, .lightbox-control-glyph { filter: none !important; }
-}
-
-@media (min-width: 640px) {
-  .gallery-grid {
-    --gallery-gap: 12px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .gallery-grid {
-    --gallery-gap: 16px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    /* One shared row height: a portrait spans one column at a 3:4 ratio. */
-    grid-auto-rows: calc(100cqw / 3 - var(--gallery-gap));
-  }
-
-  .gallery-card {
-    height: 100%;
-    aspect-ratio: auto;
-  }
 }

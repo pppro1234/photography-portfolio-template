@@ -1,6 +1,7 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readPhotograph } from "./lib/gallery-appearance.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -60,113 +61,6 @@ const walkImages = async (dir) => {
   return files;
 };
 
-const readJpegSize = (buffer) => {
-  if (buffer[0] !== 0xff || buffer[1] !== 0xd8) {
-    throw new Error("Invalid JPEG signature");
-  }
-
-  let offset = 2;
-  const sofMarkers = new Set([
-    0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce,
-    0xcf,
-  ]);
-
-  while (offset < buffer.length) {
-    if (buffer[offset] !== 0xff) {
-      offset += 1;
-      continue;
-    }
-
-    while (buffer[offset] === 0xff) offset += 1;
-
-    const marker = buffer[offset];
-    offset += 1;
-
-    if (marker === 0xd9 || marker === 0xda) break;
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
-
-    const length = buffer.readUInt16BE(offset);
-    if (sofMarkers.has(marker)) {
-      return {
-        height: buffer.readUInt16BE(offset + 3),
-        width: buffer.readUInt16BE(offset + 5),
-      };
-    }
-
-    offset += length;
-  }
-
-  throw new Error("JPEG dimensions were not found");
-};
-
-const readPngSize = (buffer) => {
-  const signature = "89504e470d0a1a0a";
-  if (buffer.subarray(0, 8).toString("hex") !== signature) {
-    throw new Error("Invalid PNG signature");
-  }
-
-  return {
-    width: buffer.readUInt32BE(16),
-    height: buffer.readUInt32BE(20),
-  };
-};
-
-const readUInt24LE = (buffer, offset) =>
-  buffer[offset] | (buffer[offset + 1] << 8) | (buffer[offset + 2] << 16);
-
-const readWebpSize = (buffer) => {
-  if (
-    buffer.subarray(0, 4).toString("ascii") !== "RIFF" ||
-    buffer.subarray(8, 12).toString("ascii") !== "WEBP"
-  ) {
-    throw new Error("Invalid WebP signature");
-  }
-
-  let offset = 12;
-  while (offset + 8 <= buffer.length) {
-    const chunkType = buffer.subarray(offset, offset + 4).toString("ascii");
-    const chunkSize = buffer.readUInt32LE(offset + 4);
-    const chunkData = offset + 8;
-
-    if (chunkType === "VP8X") {
-      return {
-        width: readUInt24LE(buffer, chunkData + 4) + 1,
-        height: readUInt24LE(buffer, chunkData + 7) + 1,
-      };
-    }
-
-    if (chunkType === "VP8L") {
-      const bits = buffer.readUInt32LE(chunkData + 1);
-      return {
-        width: (bits & 0x3fff) + 1,
-        height: ((bits >> 14) & 0x3fff) + 1,
-      };
-    }
-
-    if (chunkType === "VP8 ") {
-      return {
-        width: buffer.readUInt16LE(chunkData + 6) & 0x3fff,
-        height: buffer.readUInt16LE(chunkData + 8) & 0x3fff,
-      };
-    }
-
-    offset += 8 + chunkSize + (chunkSize % 2);
-  }
-
-  throw new Error("WebP dimensions were not found");
-};
-
-const readImageSize = async (filePath) => {
-  const buffer = await readFile(filePath);
-  const extension = path.extname(filePath).toLowerCase();
-
-  if (extension === ".jpg" || extension === ".jpeg") return readJpegSize(buffer);
-  if (extension === ".png") return readPngSize(buffer);
-  if (extension === ".webp") return readWebpSize(buffer);
-
-  throw new Error(`Unsupported image type: ${extension}`);
-};
-
 const syncGallery = async () => {
   const existingItems = await readExistingData();
   const existingBySrc = new Map(existingItems.map((item) => [item.src, item]));
@@ -186,7 +80,7 @@ const syncGallery = async () => {
     const relativePath = toPosixPath(path.relative(galleryDir, filePath));
     const src = `/gallery/${relativePath}`;
     const previous = existingBySrc.get(src);
-    const { width, height } = await readImageSize(filePath);
+    const { width, height, appearance } = await readPhotograph(filePath);
 
     imageItems.push({
       id: previous?.id ?? nextId++,
@@ -198,6 +92,7 @@ const syncGallery = async () => {
       description: previous?.description || "",
       thumbPosition: previous?.thumbPosition || "center",
       isWide: width >= height,
+      appearance,
     });
   }
 

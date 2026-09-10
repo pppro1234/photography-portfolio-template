@@ -1,17 +1,12 @@
-import Image from "next/image";
+import GalleryThumbnail from "./GalleryThumbnail";
 import GalleryCardMotion from "./GalleryCardMotion";
 import { photoTitleClassName } from "../lib/gallery-presentation";
 
-const getGalleryImageSizes = (img) =>
-  img.isWide
-    ? "(min-width: 1400px) 660px, (min-width: 1024px) 50vw, 100vw"
-    : "(min-width: 1400px) 322px, (min-width: 1024px) 25vw, 50vw";
-
-export default function ImageCard({ img, index }) {
+export default function ImageCard({ img, index, eager = false }) {
   const caption = (
     <>
       <div className="gallery-shade pointer-events-none absolute inset-0 hidden md:block" />
-      <div className="pointer-events-none absolute inset-0 hidden p-3 sm:p-5 md:p-6 md:flex flex-col justify-end">
+      <div className="gallery-card-caption pointer-events-none absolute inset-0 hidden md:flex flex-col justify-end">
         <div className="gallery-caption">
           <h3 className={`${photoTitleClassName} text-white mb-1 sm:mb-2`}>
             {img.title}
@@ -26,14 +21,13 @@ export default function ImageCard({ img, index }) {
 
   return (
     <GalleryCardMotion id={img.id} title={img.title} isWide={img.isWide} index={index} caption={caption}>
-      <Image
+      <GalleryThumbnail
+        id={img.id}
         src={img.src}
-        alt={img.title}
-        fill
-        sizes={getGalleryImageSizes(img)}
-        priority={index === 0}
-        className="gallery-photo object-cover"
-        style={{ objectPosition: img.thumbPosition || "center" }}
+        title={img.title}
+        isWide={img.isWide}
+        thumbPosition={img.thumbPosition}
+        eager={eager}
       />
     </GalleryCardMotion>
   );

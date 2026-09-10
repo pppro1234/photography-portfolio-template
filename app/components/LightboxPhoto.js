@@ -5,12 +5,18 @@ import { useLayoutEffect, useState } from "react";
 import { m as motion } from "framer-motion";
 import { getLightboxExitTransition, getLightboxPhotoTransition, getLightboxTarget, observeLightboxPreview } from "../lib/lightbox-motion.mjs";
 
-const getLightboxImageSizes = (img) =>
-  img.isWide
-    ? "(min-width: 768px) 90vw, 100vw"
-    : "(min-width: 768px) 58vw, 100vw";
+const getLightboxImageSizes = (img, portraitFrameRatio) => {
+  const ratio = img.width / img.height;
+  if (ratio > 1) return `(min-width: 768px) min(calc(100vw - 128px), calc(82dvh * ${ratio})), calc(100vw - 16px)`;
+  if (ratio === 1) return "(min-width: 768px) min(calc(100vw - 128px), calc(82dvh - 115.5px)), calc(100vw - 16px)";
 
-export default function LightboxPhoto({ img, getThumbnail, shouldReduceMotion, onReady }) {
+  // Match the frame's 288px minimum text column and responsive gap.
+  const desktopSize = (gap) => `min(calc(82dvh * ${ratio}), calc((min(1152px, calc(100vw - 128px)) - ${288 + gap}px) * ${ratio / portraitFrameRatio}))`;
+  return `(min-width: 1024px) ${desktopSize(56)}, (min-width: 768px) ${desktopSize(40)}, calc((100vw - 16px) * ${ratio / portraitFrameRatio})`;
+};
+
+export default function LightboxPhoto({ img, getThumbnail, shouldReduceMotion, onReady, portraitFrameRatio = 3 / 4 }) {
+  const isPortrait = img.width < img.height;
   const [previewSrc, setPreviewSrc] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -23,7 +29,8 @@ export default function LightboxPhoto({ img, getThumbnail, shouldReduceMotion, o
 
   return (
     <motion.div
-      className="lightbox-photo relative w-full max-w-full md:w-auto"
+      className={`lightbox-photo relative w-full max-w-full ${isPortrait ? "lightbox-photo-portrait" : "lightbox-photo-stacked"}`}
+      style={{ "--lightbox-photo-ratio": img.width / img.height }}
       aria-busy={!ready && !hasError}
       data-photo-ready={ready}
       initial={{ opacity: 0 }}
@@ -40,17 +47,13 @@ export default function LightboxPhoto({ img, getThumbnail, shouldReduceMotion, o
         alt={img.title}
         width={img.width}
         height={img.height}
-        sizes={getLightboxImageSizes(img)}
+        sizes={getLightboxImageSizes(img, portraitFrameRatio)}
         priority
         draggable={false}
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
         style={{ opacity: isLoaded ? 1 : 0 }}
-        className={
-          img.isWide
-            ? "h-auto w-full max-w-full object-contain md:max-h-[64vh] md:w-auto"
-            : "h-auto w-full max-w-full object-contain md:max-h-[82vh] md:w-auto md:max-w-[58vw]"
-        }
+        className="h-auto w-full max-w-full object-contain"
       />
       {hasError && !ready && (
         <p role="status" className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/70">

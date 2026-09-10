@@ -10,9 +10,9 @@ import { photoTitleClassName } from "../lib/gallery-presentation";
 import { getLightboxExitTransition, getLightboxTarget, getLightboxTransition } from "../lib/lightbox-motion.mjs";
 import { MOTION_BLUR, MOTION_DURATION, MOTION_EASE, motionBlur, motionRevealTransition, motionTransition } from "../lib/motion-tokens.mjs";
 
-function LightboxContent({ img, getThumbnail, shouldReduceMotion }) {
+function LightboxContent({ img, getThumbnail, shouldReduceMotion, portraitFrameRatio }) {
   const [ready, setReady] = useState(false);
-  const isWide = img.isWide;
+  const isWide = img.width >= img.height;
   const textBlur = shouldReduceMotion ? "none" : motionBlur();
   const textBlock = (
     <motion.div
@@ -23,7 +23,7 @@ function LightboxContent({ img, getThumbnail, shouldReduceMotion }) {
       transition={motionRevealTransition(MOTION_DURATION.emphasis, { instant: shouldReduceMotion, delay: MOTION_DURATION.quick })}
       className={
         isWide
-          ? "motion-blur-content w-full max-w-4xl px-3 text-center md:px-0 md:text-left"
+          ? "motion-blur-content w-full max-w-4xl px-3 text-center md:px-0"
           : "motion-blur-content w-full max-w-md px-3 text-center md:px-0 md:text-left"
       }
     >
@@ -41,14 +41,15 @@ function LightboxContent({ img, getThumbnail, shouldReduceMotion }) {
 
   return (
     <>
-      <LightboxPhoto img={img} getThumbnail={getThumbnail} shouldReduceMotion={shouldReduceMotion} onReady={setReady} />
+      <LightboxPhoto img={img} getThumbnail={getThumbnail} shouldReduceMotion={shouldReduceMotion} onReady={setReady} portraitFrameRatio={portraitFrameRatio} />
       {textBlock}
     </>
   );
 }
 
-const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, getThumbnail }) => {
-  const isWide = img.isWide;
+const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, getThumbnail, portraitFrameRatio = 3 / 4 }) => {
+  const isWide = img.width >= img.height;
+  const isLandscape = img.width > img.height;
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -203,14 +204,8 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
         {img.title}
       </p>
 
-      <div ref={scrollContainerRef} className="lightbox-scroll relative h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
-        <div
-          className={
-            isWide
-              ? "flex min-h-full items-start justify-center md:pt-8"
-              : "flex min-h-full items-start justify-center md:items-center"
-          }
-        >
+      <div ref={scrollContainerRef} style={{ "--lightbox-portrait-ratio": portraitFrameRatio }} className="lightbox-scroll relative h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
+        <div className="flex min-h-full items-start justify-center md:items-center">
           <div
             key={img.id}
             onClick={(event) => event.stopPropagation()}
@@ -222,15 +217,18 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
             onTouchCancel={() => { touchStartRef.current = null; }}
             style={{ touchAction: "pan-y pinch-zoom" }}
             className={
-              isWide
-                ? "flex w-full max-w-6xl flex-col items-center gap-5 md:gap-6"
-                : "flex w-full max-w-6xl flex-col items-center gap-6 md:flex-row md:items-center md:justify-center md:gap-10 lg:gap-14"
+              isLandscape
+                ? "lightbox-stacked-content lightbox-landscape-content flex w-full flex-col items-center gap-6"
+                : isWide
+                ? "lightbox-stacked-content lightbox-square-content flex w-full flex-col items-center gap-6"
+                : "lightbox-portrait-content flex w-full max-w-6xl flex-col items-center gap-6"
             }
           >
             <LightboxContent
               img={img}
               getThumbnail={getThumbnail}
               shouldReduceMotion={shouldReduceMotion}
+              portraitFrameRatio={portraitFrameRatio}
             />
           </div>
         </div>

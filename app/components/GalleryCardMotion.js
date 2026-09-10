@@ -3,14 +3,15 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { m as motion, useAnimationControls, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { getCardScrollProgress } from "../lib/near-viewport.mjs";
+import { getGalleryRevealDelay } from "../lib/gallery-reveal.mjs";
 import { useGalleryMotion } from "./GalleryController";
 import { useNearViewport } from "./useMotionActivity";
 import { useSpringCleanup } from "./useSpringCleanup";
-import { MOTION_DELAY, MOTION_DURATION, MOTION_SPRING, motionTransition } from "../lib/motion-tokens.mjs";
+import { MOTION_DURATION, MOTION_SPRING, motionTransition } from "../lib/motion-tokens.mjs";
 
 // Unmounting this controller removes offscreen scroll/transform subscriptions.
 // The card and its rendered MotionValues stay mounted, so layout never changes.
-function CardParallax({ cardRef, floatProgress, floatScale, floatDistance, cardY, imageY }) {
+function CardParallax({ cardRef, floatProgress, floatScale, floatDistance, cardY, imageY, layoutSignature }) {
   const { scrollYProgress } = useScroll({
     target: cardRef,
     offset: ["start end", "end start"],
@@ -37,12 +38,15 @@ function CardParallax({ cardRef, floatProgress, floatScale, floatDistance, cardY
     const stopFloat = floatingY.on("change", (value) => cardY.set(value));
     const stopParallax = parallaxY.on("change", (value) => imageY.set(value));
     window.addEventListener("pageshow", syncPosition);
+    const observer = new ResizeObserver(syncPosition);
+    observer.observe(cardRef.current);
     return () => {
       stopFloat();
       stopParallax();
       window.removeEventListener("pageshow", syncPosition);
+      observer.disconnect();
     };
-  }, [cardRef, cardY, imageY, floatProgress, floatScale, floatDistance, scrollYProgress, smoothImageOffset, floatingY, parallaxY]);
+  }, [cardRef, cardY, imageY, floatProgress, floatScale, floatDistance, scrollYProgress, smoothImageOffset, floatingY, parallaxY, layoutSignature]);
 
   return null;
 }
@@ -51,17 +55,28 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
   const cardRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
   const revealControls = useAnimationControls();
+  const revealDelay = useRef(null);
   const isNearViewport = useNearViewport(cardRef);
-  const { floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion } = useGalleryMotion();
+  const { floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature } = useGalleryMotion();
+  const displayIndex = indicesById.get(id) ?? index;
+  const indexInRow = indicesInRowById.get(id) ?? 0;
+  const isWideThumbnail = (columnSpansById.get(id) ?? (isWide ? 2 : 1)) === 2;
   const cardY = useMotionValue(0);
   const imageY = useMotionValue("-2%");
   const isActive = isPageVisible && !shouldReduceMotion && (isNearViewport || isFocused);
-  const floatDistance = isWide ? 6 : index % 2 === 1 ? 10 : 8;
+  const floatDistance = isWideThumbnail ? 6 : displayIndex % 2 === 1 ? 10 : 8;
+  const resolveRevealDelay = () => {
+    if (shouldReduceMotion || !cardRef.current) return 0;
+    if (document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return 0;
+    // Resolve at first entrance, including restored scroll positions, then keep
+    // the running animation stable through layout and viewport changes.
+    return revealDelay.current ??= getGalleryRevealDelay(cardRef.current, indexInRow, Math.max(0, window.scrollY));
+  };
 
   return (
     <motion.div
       ref={cardRef}
-      className={`gallery-reveal gallery-card ${isWide ? "gallery-card-wide" : ""}`}
+      className={`gallery-reveal gallery-card ${isWideThumbnail ? "gallery-card-wide" : ""}`}
       data-motion-active={isActive ? "true" : undefined}
       initial={shouldReduceMotion ? false : "hidden"}
       animate={revealControls}
@@ -69,14 +84,14 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
       viewport={{ once: true, amount: 0.1, margin: "0px 0px -24px 0px" }}
       variants={{
         hidden: { opacity: 0, y: 24 },
-        visible: {
+        visible: () => ({
           opacity: 1,
           y: 0,
           transition: motionTransition(MOTION_DURATION.content, {
             instant: shouldReduceMotion,
-            delay: Math.min(index, 5) * MOTION_DELAY.paragraph,
+            delay: resolveRevealDelay(),
           }),
-        },
+        }),
       }}
       onFocusCapture={() => {
         setIsFocused(true);
@@ -95,6 +110,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
           floatDistance={floatDistance}
           cardY={cardY}
           imageY={imageY}
+          layoutSignature={layoutSignature}
         />
       )}
       <motion.button
