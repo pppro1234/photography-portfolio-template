@@ -6,6 +6,7 @@
 .work-page { color: var(--work-foreground); }
 .work-heading { font-weight: 300; letter-spacing: normal; }
 .series-intro-copy { display: block; }
+.series-intro-copy[data-home-return-waiting="true"] { opacity: 0; pointer-events: none; }
 .series-intro-copy[data-series-enter="true"] {
   animation: series-intro-reveal var(--motion-duration-surface) var(--motion-ease-out) both,
     series-intro-focus var(--motion-duration-surface) var(--motion-ease-in-out) both;

@@ -79,7 +79,7 @@ test("scroll blur is bounded, continuous, reversible and removes the filter at t
 test("home navigation and category headings share the existing subtitle motion without changing its range", () => {
   const provider = source("components/IntroMotionProvider.js");
   assert.match(provider, /motionBlur\(MOTION_BLUR.content, clampProgress\(scroll \/ bounds.distance \/ 0.6\)\)/);
-  assert.match(provider, /navigationBlur = useTransform\(navigationOpacity, \(progress\) => motionBlur\(MOTION_BLUR.content, 1 - progress\)\)/);
+  assert.match(provider, /navigationBlur = useTransform\(navigationOpacity, \(progress\) => motionBlur\(isHomeReturn \? MOTION_BLUR.control : MOTION_BLUR.content, 1 - progress\)\)/);
   assert.match(source("components/SiteHeader.js"), /filter: isHome && !shouldReduceMotion \? navigationBlur : "none"/);
   assert.match(source("components/Intro.js"), /<motion.h1 style=\{\{[^}]*filter: shouldReduceMotion \? "none" : subtitleBlur/);
 });

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { clampProgress, collapseEasing, getBrandTransform, getIntroGeometry, getNavigationReveal, INTRO_SPRING, smoothStep } from "../lib/intro-motion.mjs";
 import { MOTION_BLUR, motionBlur } from "../lib/motion-tokens.mjs";
+import useHomeReturnMotion from "./useHomeReturnMotion";
 
 const IntroMotionContext = createContext(null);
 
@@ -23,18 +24,20 @@ export default function IntroMotionProvider({ children }) {
   const geometry = useMotionValue(getIntroGeometry({ originTop: 144, originLeft: 32, availableScroll: 184 }));
   const activeScroll = shouldReduceMotion ? scrollY : smoothScroll;
   const activeMenu = shouldReduceMotion ? menuProgress : smoothMenu;
+  const homeReturn = useHomeReturnMotion({ pathname, shouldReduceMotion, scrollY, smoothScroll, menuProgress, smoothMenu });
+  const { isHomeReturn, navigationExit } = homeReturn;
 
-  const navigationOpacity = useTransform([activeScroll, geometry, activeMenu], ([scroll, bounds, menu]) =>
-    getNavigationReveal(scroll, bounds, menu)
+  const navigationOpacity = useTransform([activeScroll, geometry, activeMenu, navigationExit], ([scroll, bounds, menu, exit]) =>
+    isHomeReturn ? Math.max(getNavigationReveal(scroll, bounds), exit) : getNavigationReveal(scroll, bounds, menu)
   );
-  const navigationY = useTransform(navigationOpacity, (progress) => 4 * (1 - progress));
-  const navigationBlur = useTransform(navigationOpacity, (progress) => motionBlur(MOTION_BLUR.content, 1 - progress));
+  const navigationY = useTransform(navigationOpacity, (progress) => isHomeReturn ? 0 : 4 * (1 - progress));
+  const navigationBlur = useTransform(navigationOpacity, (progress) => motionBlur(isHomeReturn ? MOTION_BLUR.control : MOTION_BLUR.content, 1 - progress));
   const navigationVisibility = useTransform(navigationOpacity, (progress) => progress > 0 ? "visible" : "hidden");
   const navigationInteractive = useTransform(navigationOpacity, (progress) => progress >= 0.5);
   const navigationPointerEvents = useTransform(navigationInteractive, (interactive) => interactive ? "auto" : "none");
 
   const brandTransform = useTransform([activeScroll, geometry, activeMenu], ([scroll, bounds, menu]) => {
-    const { x, y, scale } = getBrandTransform(scroll, bounds, menu);
+    const { x, y, scale } = getBrandTransform(scroll, bounds, isHomeReturn ? 0 : menu);
     return `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
   });
   const titleTransform = useTransform([activeScroll, geometry], ([scroll, bounds]) => {
@@ -51,8 +54,8 @@ export default function IntroMotionProvider({ children }) {
   const subtitleBlur = useTransform([activeScroll, geometry], ([scroll, bounds]) =>
     motionBlur(MOTION_BLUR.content, clampProgress(scroll / bounds.distance / 0.6))
   );
-  const surfaceOpacity = useTransform([activeScroll, geometry, activeMenu], ([scroll, bounds, menu]) =>
-    bounds.scrollable === false ? 1 : Math.max(smoothStep(clampProgress((scroll / bounds.distance - 0.4) / 0.6)), clampProgress(menu))
+  const surfaceOpacity = useTransform([activeScroll, geometry, activeMenu, navigationExit], ([scroll, bounds, menu, exit]) =>
+    bounds.scrollable === false ? 1 : Math.max(smoothStep(clampProgress((scroll / bounds.distance - 0.4) / 0.6)), isHomeReturn ? exit : clampProgress(menu))
   );
 
   useLayoutEffect(() => {
@@ -101,7 +104,7 @@ export default function IntroMotionProvider({ children }) {
   }, [pathname, geometry, scrollY, smoothScroll]);
 
   return (
-    <IntroMotionContext.Provider value={{ brandTransform, titleTransform, subtitleOpacity, subtitleY, subtitleBlur, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion }}>
+    <IntroMotionContext.Provider value={{ ...homeReturn, brandTransform, titleTransform, subtitleOpacity, subtitleY, subtitleBlur, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion }}>
       {children}
     </IntroMotionContext.Provider>
   );

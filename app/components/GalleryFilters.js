@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "./SiteLink";
 import GalleryFilterMotion from "./GalleryFilterMotion";
 import { filterGalleryImages, galleryCategories, getCategoryHref } from "../lib/gallery-categories.mjs";
 

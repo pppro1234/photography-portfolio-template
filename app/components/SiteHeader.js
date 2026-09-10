@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./SiteLink";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
@@ -10,6 +10,7 @@ import { galleryCategories, getCategoryHref } from "../lib/gallery-categories.mj
 import { createHoverIntent, getNavigationDuration, getNavigationPhaseDuration, initialNavigationState, navigationReducer, NAV_SWITCH_DURATION, NAV_SWITCH_HEIGHT_DURATION } from "../lib/navigation-motion.mjs";
 import { MOTION_DURATION } from "../lib/motion-tokens.mjs";
 import { site, contactLinks } from "../lib/site-content";
+import IntroCopyMotion from "./IntroCopyMotion";
 import ThemeSwitch from "./ThemeSwitch";
 
 const workLinks = [{ slug: "all", label: "All work" }, ...galleryCategories];
@@ -19,7 +20,7 @@ const panelIds = { work: "work-navigation", about: "about-navigation", mobile: "
 export default function SiteHeader() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const { brandTransform, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion } = useIntroMotion();
+  const { brandTransform, surfaceOpacity, navigationOpacity, navigationY, navigationBlur, navigationVisibility, navigationInteractive, navigationPointerEvents, menuProgress, shouldReduceMotion, homeReturnPhase, startHomeReturn, navigationExit, navigationExitBlur } = useIntroMotion();
   const [navigationReady, setNavigationReady] = useState(() => navigationInteractive.get());
   const [{ menu, phase }, dispatch] = useReducer(navigationReducer, initialNavigationState);
   const [geometry, setGeometry] = useState({ height: 0, duration: MOTION_DURATION.control });
@@ -30,6 +31,7 @@ export default function SiteHeader() {
   const lastMenuRef = useRef(null);
   const isOpen = menu !== null;
   const isMobileOpen = menu === "mobile";
+  const homeReturnWaiting = homeReturnPhase === "pending" || homeReturnPhase === "waiting";
   const isWork = pathname === "/" || pathname.startsWith("/work/");
   const hoverIntent = useMemo(() => createHoverIntent((nextMenu) => dispatch({ type: "select", menu: nextMenu })), []);
 
@@ -43,13 +45,22 @@ export default function SiteHeader() {
   useEffect(() => () => hoverIntent.cancel(), [hoverIntent]);
   useLayoutEffect(() => {
     // Update React only when the interaction threshold changes, not each frame.
+    let disposed = false;
     setNavigationReady(navigationInteractive.get());
-    return navigationInteractive.on("change", setNavigationReady);
+    // Motion also refreshes derived values while its provider renders.
+    const unsubscribe = navigationInteractive.on("change", () => queueMicrotask(() => {
+      if (!disposed) setNavigationReady(navigationInteractive.get());
+    }));
+    return () => { disposed = true; unsubscribe(); };
   }, [navigationInteractive]);
   useLayoutEffect(() => {
     // Keep the single home wordmark clear of the flyout until it has closed.
     menuProgress.set(phase === "closed" ? 0 : 1);
   }, [phase, menuProgress]);
+
+  useLayoutEffect(() => {
+    if (phase === "closed" && homeReturnPhase === "waiting") startHomeReturn();
+  }, [phase, homeReturnPhase, startHomeReturn]);
 
   useEffect(() => {
     const breakpoint = window.matchMedia("(max-width: 833px)");
@@ -205,10 +216,14 @@ export default function SiteHeader() {
         <div className="site-nav-inner">
           {isHome ? (
             <div className="site-nav-brand-slot">
-              <motion.h1 className="home-nav-wordmark site-nav-brand brand-wordmark" style={{ transform: brandTransform }} aria-hidden={isMobileOpen || undefined}>
+              {homeReturnPhase !== "idle" && (
+                <motion.span aria-hidden="true" className="home-return-nav-brand brand-wordmark"
+                  style={{ opacity: navigationExit, filter: navigationExitBlur }}>{site.name}</motion.span>
+              )}
+              <motion.h1 className="home-nav-wordmark site-nav-brand brand-wordmark" style={{ transform: brandTransform }} aria-hidden={isMobileOpen || homeReturnWaiting || undefined}>
                 <Link href="/" aria-label={`${site.name} home`} onClick={closeMenu}
-                  aria-hidden={isMobileOpen || undefined} tabIndex={isMobileOpen ? -1 : undefined}
-                  onPointerEnter={(event) => { if (event.pointerType === "mouse") closeMenu(); }}>{site.name}</Link>
+                  aria-hidden={isMobileOpen || homeReturnWaiting || undefined} tabIndex={isMobileOpen || homeReturnWaiting ? -1 : undefined}
+                  onPointerEnter={(event) => { if (event.pointerType === "mouse") closeMenu(); }}><IntroCopyMotion category="all">{site.name}</IntroCopyMotion></Link>
               </motion.h1>
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "./SiteLink";
 import { ArrowUpRight } from "lucide-react";
 import { galleryCategories, getCategoryHref } from "../lib/gallery-categories.mjs";
 import { site, contactLinks } from "../lib/site-content";

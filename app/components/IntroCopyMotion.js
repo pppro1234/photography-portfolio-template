@@ -3,11 +3,14 @@
 import { useLayoutEffect, useRef } from "react";
 import { useGalleryFilterHistory } from "./GalleryFilterMotionProvider";
 import { shouldAnimateSeriesIntro } from "../lib/gallery-filter-motion.mjs";
+import { useIntroMotion } from "./IntroMotionProvider";
 
 export default function IntroCopyMotion({ category, description = false, children }) {
   const copyRef = useRef(null);
   const entranceRef = useRef(null);
   const history = useGalleryFilterHistory();
+  const { homeReturnPhase } = useIntroMotion();
+  const homeReturn = category === "all" && homeReturnPhase !== "idle";
 
   useLayoutEffect(() => {
     const copy = copyRef.current;
@@ -33,7 +36,9 @@ export default function IntroCopyMotion({ category, description = false, childre
   }, [category, history]);
 
   return (
-    <span ref={copyRef} className={`series-intro-copy${description ? " series-intro-description" : ""}`}>
+    <span ref={copyRef} className={`series-intro-copy${description ? " series-intro-description" : ""}`}
+      data-home-return-waiting={homeReturn && homeReturnPhase !== "revealing" || undefined}
+      data-series-enter={homeReturn && homeReturnPhase === "revealing" ? "true" : undefined}>
       {children}
     </span>
   );

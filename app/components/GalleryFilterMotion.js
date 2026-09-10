@@ -31,6 +31,10 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
       .find((link) => link.dataset.category === previous?.category);
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const measure = (element) => getFilterBounds(element.getBoundingClientRect(), track.getBoundingClientRect());
+    const viewportWidth = () => {
+      const style = window.getComputedStyle(nav);
+      return nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    };
     let target = measure(label);
     let disposed = false;
     const start = getFilterMotionStart(previous, {
@@ -45,9 +49,9 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
     y.set(target.y);
     nav.scrollLeft = getFilterScrollLeft({
       scrollLeft: previous?.scrollLeft ?? nav.scrollLeft,
-      viewportWidth: nav.clientWidth,
+      viewportWidth: viewportWidth(),
       scrollWidth: nav.scrollWidth,
-      target,
+      target: measure(active),
     });
     nav.dataset.motionReady = "true";
     const transition = motionTransition(MOTION_DURATION.surface, { instant: media.matches });
@@ -59,6 +63,13 @@ export default function GalleryFilterMotion({ activeCategory, children }) {
 
     const sync = () => {
       if (disposed || document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return;
+      // Keep the selected label and its count inside narrow filter tracks.
+      nav.scrollLeft = getFilterScrollLeft({
+        scrollLeft: nav.scrollLeft,
+        viewportWidth: viewportWidth(),
+        scrollWidth: nav.scrollWidth,
+        target: measure(active),
+      });
       const next = measure(label);
       if (!media.matches && next.x === target.x && next.y === target.y && next.width === target.width) return;
       animations.forEach((animation) => animation.stop());
