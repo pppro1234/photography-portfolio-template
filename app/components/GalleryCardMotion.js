@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { m as motion, useAnimationControls, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import { getCardScrollProgress } from "../lib/near-viewport.mjs";
-import { getGalleryRevealDelay } from "../lib/gallery-reveal.mjs";
+import { GALLERY_REVEAL_VIEWPORT, getGalleryRevealDelay } from "../lib/gallery-reveal.mjs";
 import { useGalleryMotion } from "./GalleryController";
 import { useNearViewport } from "./useMotionActivity";
 import { useSpringCleanup } from "./useSpringCleanup";
@@ -70,7 +70,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
     if (document.getElementById("site-scene")?.hasAttribute("data-lightbox-scene")) return 0;
     // Resolve at first entrance, including restored scroll positions, then keep
     // the running animation stable through layout and viewport changes.
-    return revealDelay.current ??= getGalleryRevealDelay(cardRef.current, indexInRow, Math.max(0, window.scrollY));
+    return revealDelay.current ??= getGalleryRevealDelay(cardRef.current, indexInRow, Math.max(0, window.scrollY), window.innerHeight);
   };
 
   return (
@@ -81,7 +81,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
       initial={shouldReduceMotion ? false : "hidden"}
       animate={revealControls}
       whileInView="visible"
-      viewport={{ once: true, amount: 0.1, margin: "0px 0px -24px 0px" }}
+      viewport={GALLERY_REVEAL_VIEWPORT}
       variants={{
         hidden: { opacity: 0, y: 24 },
         visible: () => ({

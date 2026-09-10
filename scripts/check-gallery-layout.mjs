@@ -23,7 +23,7 @@ const makeRows = (count, columns) => {
 
 test("visible rows keep top-to-bottom order while their entrances overlap", () => {
   const cards = makeRows(3, 6);
-  const delays = cards.map((card, index) => getGalleryRevealDelay(card, index % 6, 0));
+  const delays = cards.map((card, index) => getGalleryRevealDelay(card, index % 6, 0, 1000));
   assert.deepEqual(delays.slice(0, 6), [0, 30, 60, 90, 120, 150]);
   assert.deepEqual(delays.slice(6, 12), [160, 190, 220, 250, 280, 310]);
   assert.ok(delays[6] > delays[5]);
@@ -33,12 +33,33 @@ test("visible rows keep top-to-bottom order while their entrances overlap", () =
 
 test("restored or scrolled galleries restart timing at the first visible row", () => {
   const cards = makeRows(12, 2);
-  assert.equal(getGalleryRevealDelay(cards[20], 0, 3100), 0);
-  assert.equal(getGalleryRevealDelay(cards[21], 1, 3100), 30);
-  assert.equal(getGalleryRevealDelay(cards[22], 0, 3100), 160);
-  assert.equal(getGalleryRevealDelay(cards[2], 0, 351), 160, "a preceding row with 10% remaining still counts");
-  assert.equal(getGalleryRevealDelay(cards[2], 0, 353), 0, "a row beyond the visibility threshold no longer delays entry");
-  assert.equal(getGalleryRevealDelay(null, 0, 0), 0);
+  assert.equal(getGalleryRevealDelay(cards[20], 0, 3100, 800), 0);
+  assert.equal(getGalleryRevealDelay(cards[21], 1, 3100, 800), 30);
+  assert.equal(getGalleryRevealDelay(cards[22], 0, 3100, 800), 160);
+  assert.equal(getGalleryRevealDelay(makeRows(3, 2)[2], 0, 375, 800), 160, "a partially visible preceding row belongs to the initial viewport");
+  assert.equal(getGalleryRevealDelay(makeRows(3, 2)[2], 0, 380, 800), 0, "a row above the viewport does not delay the initial entrance");
+  assert.equal(getGalleryRevealDelay(null, 0, 0, 800), 0);
+});
+
+test("approaching and newly scrolled rows do not wait for the initial visible rows", () => {
+  const cards = makeRows(5, 6);
+  assert.equal(getGalleryRevealDelay(cards[0], 0, 0, 650), 0);
+  assert.equal(getGalleryRevealDelay(cards[6], 0, 0, 650), 160);
+  // The next row starts 50px below the real viewport, inside the lead-in area.
+  assert.equal(getGalleryRevealDelay(cards[12], 0, 0, 650), 0);
+  assert.equal(getGalleryRevealDelay(cards[17], 5, 0, 650), 150);
+  // Previous rows remain visible after scrolling, but add no new row delay.
+  assert.equal(getGalleryRevealDelay(cards[18], 0, 500, 650), 0);
+  assert.equal(getGalleryRevealDelay(cards[19], 1, 500, 650), 30);
+});
+
+test("initial row timing is independent of callback order and later layout changes", () => {
+  const cards = makeRows(3, 6);
+  assert.equal(getGalleryRevealDelay(cards[12], 0, 0, 1000), 320);
+  assert.equal(getGalleryRevealDelay(cards[6], 0, 0, 1000), 160);
+  assert.equal(getGalleryRevealDelay(cards[0], 0, 0, 1000), 0);
+  cards[7].offsetTop = 900;
+  assert.equal(getGalleryRevealDelay(cards[7], 1, 500, 600), 190);
 });
 
 test("square photos fill a final portrait slot and otherwise keep two columns", () => {

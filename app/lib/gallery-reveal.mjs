@@ -1,23 +1,30 @@
 import { MOTION_DELAY } from "./motion-tokens.mjs";
 
+export const GALLERY_REVEAL_VIEWPORT = Object.freeze({
+  once: true,
+  amount: "some",
+  margin: "0px 0px 120px 0px",
+});
+
+const initialRowRanks = new WeakMap();
+
 const documentTop = (element) => {
   let top = 0;
   for (let current = element; current; current = current.offsetParent) top += current.offsetTop;
   return top;
 };
 
-export function getGalleryRevealDelay(element, indexInRow, scrollY) {
+export function getGalleryRevealDelay(element, indexInRow, scrollY, viewportHeight) {
   if (!element?.parentElement) return 0;
-  const top = documentTop(element);
-  const precedingVisibleRows = new Set();
-  for (const card of element.parentElement.children) {
-    const rowTop = documentTop(card);
-    // Ignore the entrance translation and rows that have left the viewport.
-    // The 10% visibility threshold matches the existing entrance observer.
-    if (rowTop < top && rowTop + card.clientHeight * 0.9 > scrollY) {
-      precedingVisibleRows.add(rowTop);
-    }
+  const grid = element.parentElement;
+  if (!initialRowRanks.has(grid)) {
+    // Capture the real viewport once, without the observer's lead-in region.
+    // Later scroll entrances must not queue behind rows already on screen.
+    const visible = Array.from(grid.children, (card) => ({ card, top: documentTop(card) }))
+      .filter(({ card, top }) => top < scrollY + viewportHeight && top + card.clientHeight > scrollY);
+    const rows = [...new Set(visible.map(({ top }) => top))].sort((a, b) => a - b);
+    initialRowRanks.set(grid, new Map(visible.map(({ card, top }) => [card, rows.indexOf(top)])));
   }
-  return precedingVisibleRows.size * MOTION_DELAY.galleryRow
+  return (initialRowRanks.get(grid).get(element) ?? 0) * MOTION_DELAY.galleryRow
     + Math.min(indexInRow, 5) * MOTION_DELAY.gallery;
 }
