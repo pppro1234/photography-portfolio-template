@@ -14,8 +14,8 @@ export default function Gallery({ category = "all" }) {
     image.width < image.height ? Math.max(ratio, image.width / image.height) : ratio, 3 / 4);
   const photographs = getOrderedGalleryImages(allPhotographs, filterGalleryImages(allPhotographs, category), settings.sortMode);
   // Only the fields needed to browse the lightbox cross the client boundary.
-  const lightboxImages = photographs.map(({ id, src, width, height, title, category, description, isWide }) => ({
-    id, src, width, height, title, category, description, isWide,
+  const lightboxImages = photographs.map(({ id, src, width, height, title, category, description, isWide, capture }) => ({
+    id, src, width, height, title, category, description, isWide, capture,
   }));
 
   return (

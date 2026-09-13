@@ -58,7 +58,7 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
   const revealDelay = useRef(null);
   const revealStarted = useRef(false);
   const isNearViewport = useNearViewport(cardRef);
-  const { floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature } = useGalleryMotion();
+  const { floatProgress, floatScale, openLightbox, isPageVisible, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature, editor } = useGalleryMotion();
   const displayIndex = indicesById.get(id) ?? index;
   const indexInRow = indicesInRowById.get(id) ?? 0;
   const isWideThumbnail = (columnSpansById.get(id) ?? (isWide ? 2 : 1)) === 2;
@@ -95,6 +95,15 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
       ref={cardRef}
       className={`gallery-card ${isWideThumbnail ? "gallery-card-wide" : ""}`}
       data-motion-active={isActive ? "true" : undefined}
+      data-editor-photo-id={editor?.enabled ? id : undefined}
+      data-editor-selected={editor?.enabled && editor.selectedId === id ? "true" : undefined}
+      data-editor-dragging={editor?.dragId === id ? "true" : undefined}
+      data-editor-drop={editor?.target?.id === id ? editor.target.placement : undefined}
+      onPointerDown={editor?.enabled ? (event) => editor.onPointerDown(event, id) : undefined}
+      onPointerMove={editor?.enabled ? editor.onPointerMove : undefined}
+      onPointerUp={editor?.enabled ? editor.onPointerUp : undefined}
+      onPointerCancel={editor?.enabled ? editor.onPointerCancel : undefined}
+      onKeyDown={editor?.enabled ? (event) => editor.onKeyDown(event, id) : undefined}
       onFocusCapture={() => {
         setIsFocused(true);
         revealStarted.current = true;
@@ -135,8 +144,8 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
         <motion.button
           type="button"
           data-photo-id={id}
-          aria-label={`Open ${title}`}
-          onClick={(event) => openLightbox(id, event.currentTarget)}
+          aria-label={editor?.enabled ? `调整 ${title}` : `Open ${title}`}
+          onClick={(event) => editor?.enabled ? editor.select(id) : openLightbox(id, event.currentTarget)}
           style={{ y: shouldReduceMotion ? 0 : cardY }}
           className="gallery-card-button group relative block h-full w-full min-h-0 min-w-0 overflow-hidden text-left cursor-zoom-in"
         >
@@ -146,6 +155,9 @@ export default function GalleryCardMotion({ id, title, isWide, index, children, 
           {caption}
         </motion.button>
       </motion.div>
+      {editor?.enabled && <button type="button" className="gallery-editor-drag-handle" aria-label={`拖动 ${title}`} title="拖动排序；Alt + 方向键微调">
+        <span aria-hidden="true">⠿</span><span>{displayIndex + 1}</span>
+      </button>}
     </div>
   );
 }

@@ -47,7 +47,7 @@ function GalleryScrollMotion({ floatProgress, floatScale, lightboxActiveRef }) {
   return null;
 }
 
-export default function GalleryController({ images, children, portraitFrameRatio }) {
+export default function GalleryController({ images, children, portraitFrameRatio, editor }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isLightboxActive, setIsLightboxActive] = useState(false);
   const lightboxActiveRef = useRef(false);
@@ -56,7 +56,8 @@ export default function GalleryController({ images, children, portraitFrameRatio
   const returnFocusRef = useRef(null);
   const isNearViewport = useNearViewport(sectionRef);
   const isPageVisible = usePageVisible();
-  const shouldReduceMotion = useReducedMotionPreference();
+  const motionPreference = useReducedMotionPreference();
+  const shouldReduceMotion = motionPreference || Boolean(editor?.enabled);
   const floatProgress = useMotionValue(0);
   const floatScale = useMotionValue(1);
   const imagesById = useMemo(() => new Map(images.map((img) => [img.id, img])), [images]);
@@ -91,8 +92,8 @@ export default function GalleryController({ images, children, portraitFrameRatio
     });
   }, [images]);
   const context = useMemo(() => ({
-    floatProgress, floatScale, openLightbox, isPageVisible: isPageVisible && !isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature,
-  }), [floatProgress, floatScale, openLightbox, isPageVisible, isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature]);
+    floatProgress, floatScale, openLightbox, isPageVisible: isPageVisible && !isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature, editor,
+  }), [floatProgress, floatScale, openLightbox, isPageVisible, isLightboxActive, shouldReduceMotion, indicesById, columnSpansById, indicesInRowById, layoutSignature, editor]);
 
   return (
     <GalleryContext.Provider value={context}>

@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/.gallery-metadata-*/
+/.gallery-editor-work/
 
 # next.js
 /.next/

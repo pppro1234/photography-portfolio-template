@@ -1,3 +1,5 @@
+import { validateCaptureDetails } from "./photo-capture.mjs";
+
 /**
  * @typedef {Object} GalleryImage
  * @property {number} id Stable, unique positive integer.
@@ -9,6 +11,7 @@
  * @property {string} description Description; an empty string is allowed.
  * @property {string} thumbPosition CSS object-position for the thumbnail.
  * @property {boolean} isWide Explicit gallery layout choice.
+ * @property {{camera?: string, lens?: string, aperture?: number, exposureTime?: number, iso?: number}} [capture] Available photographic settings; never private EXIF.
  */
 
 const isGalleryPath = (src) => {
@@ -79,6 +82,9 @@ export function validateGalleryImages(data) {
     }
     if (typeof image.isWide !== "boolean") {
       fail("isWide must be a boolean.");
+    }
+    if (image.capture !== undefined && !validateCaptureDetails(image.capture)) {
+      fail("capture must contain only valid photographic settings.");
     }
   });
 

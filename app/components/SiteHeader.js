@@ -44,6 +44,20 @@ export default function SiteHeader() {
   useEffect(() => { closeMenu(); }, [pathname, closeMenu]);
   useEffect(() => () => hoverIntent.cancel(), [hoverIntent]);
   useLayoutEffect(() => {
+    if ("inert" in HTMLElement.prototype) return;
+    // Keep closing panels visible for their exit animation, but immediately
+    // remove their controls from Tab order in browsers without native inert.
+    const blocked = [...headerRef.current.querySelectorAll("[inert] a[href], [inert] button")]
+      .map((element) => [element, element.getAttribute("tabindex")]);
+    for (const [element] of blocked) element.setAttribute("tabindex", "-1");
+    return () => {
+      for (const [element, previous] of blocked) {
+        if (previous === null) element.removeAttribute("tabindex");
+        else element.setAttribute("tabindex", previous);
+      }
+    };
+  }, [menu, isHome, navigationReady]);
+  useLayoutEffect(() => {
     // Update React only when the interaction threshold changes, not each frame.
     let disposed = false;
     setNavigationReady(navigationInteractive.get());

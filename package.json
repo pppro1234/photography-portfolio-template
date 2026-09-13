@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22"
   },
   "scripts": {
     "predev": "npm run gallery:sync",
@@ -24,6 +24,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@xmldom/xmldom": "0.9.12",
+    "exiftool-vendored": "38.0.1",
     "sharp": "0.35.4",
     "tailwindcss": "^4"
   }

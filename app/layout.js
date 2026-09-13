@@ -3,6 +3,7 @@ import "./globals.css";
 import "./gallery.css";
 import "./navigation.css";
 import "./footer.css";
+import "./compatibility.css";
 import SiteHeader from "./components/SiteHeader";
 import MotionProvider from "./components/MotionProvider";
 import Footer from "./components/Footer";

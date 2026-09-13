@@ -29,6 +29,8 @@ for (const route of ["index", "about", "_not-found", ...galleryCategories.map(({
     ["About mobile layout", /\.about-story\s*\{[^}]*grid-template-columns:\s*1fr\s*[;}]/],
     ["keyboard reveal fallback", /\.about-reveal[^{}]*\{[^}]*opacity:\s*1\s*!important/],
     ["footer navigation", /\.footer-navigation\s*\{/],
+    ["guarded legacy gallery sizing", /@supports\s+not\s*\(height:\s*1cqw\)\s*\{\s*\.gallery-card\s*>\s*\.gallery-reveal\s*\{[^}]*padding-top:/],
+    ["guarded legacy viewport sizing", /@supports\s+not\s*\(height:\s*1dvh\)\s*\{[^{}]*\.nav-expander[^{}]*\{[^}]*max-height:\s*calc\(100vh\s*-\s*var\(--nav-height\)\)/],
     ["pure-black system theme", /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-theme=["']?light["']?\]\)\s*\{[^}]*--background:\s*#(?:000000|000)\s*[;}]/],
     ["manual dark theme", /:root\[data-theme=["']?dark["']?\]\s*\{[^}]*--background:\s*#(?:000000|000)\s*[;}]/],
     ["lightbox backdrop", /\.image-lightbox-backdrop\s*\{[^}]*background:\s*var\(--lightbox-backdrop\)/],

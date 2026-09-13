@@ -64,8 +64,10 @@ test("About remains available with no social links and navigation indices follow
 });
 
 test("framework contains no upstream photographer identity or fixed personal picture", () => {
-  const files = ["layout.js", "about/page.js", "work/[category]/page.js", ...readdirSync(new URL("../app/components/", import.meta.url)).map((name) => `components/${name}`)];
-  for (const file of files) assert.doesNotMatch(source(file), /PPPRO STUDIO|pppro\.studio|gallery\/norway\.jpg/);
+  const files = ["layout.js", "about/page.js", "work/[category]/page.js", "dev/gallery/page.js", "dev/gallery/GalleryEditor.js", "dev/gallery/GalleryEditorPreview.js", ...readdirSync(new URL("../app/components/", import.meta.url)).map((name) => `components/${name}`)];
+  for (const file of files) assert.doesNotMatch(source(file), /PPPRO|pppro\.studio|pppro:editor:|gallery\/norway\.jpg/);
+  assert.match(source("dev/gallery/page.js"), /siteName=\{site\.name\}/);
+  assert.match(source("dev/gallery/GalleryEditor.js"), /\{siteName\}<\/span>/);
   assert.match(source("components/Footer.js"), /new Date\(\).getFullYear\(\)/);
 });
 

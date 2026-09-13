@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { m as motion, useIsPresent } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import LightboxPhoto from "./LightboxPhoto";
+import LightboxCapture from "./LightboxCapture";
 import { useLightboxScene } from "./useLightboxScene";
 import { photoTitleClassName } from "../lib/gallery-presentation";
 import { getLightboxExitTransition, getLightboxTarget, getLightboxTransition } from "../lib/lightbox-motion.mjs";
@@ -36,6 +37,7 @@ function LightboxContent({ img, getThumbnail, shouldReduceMotion, portraitFrameR
       <p id={`lightbox-description-${img.id}`} className="mt-4 font-sans text-base font-light leading-6 tracking-normal text-white/70">
         {img.description || img.category}
       </p>
+      <LightboxCapture capture={img.capture} />
     </motion.div>
   );
 
@@ -204,7 +206,7 @@ const ImageLightbox = ({ img, onClose, onNavigate, canNavigate, returnFocusRef, 
         {img.title}
       </p>
 
-      <div ref={scrollContainerRef} style={{ "--lightbox-portrait-ratio": portraitFrameRatio }} className="lightbox-scroll relative h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
+      <div ref={scrollContainerRef} data-has-capture={Boolean(img.capture)} style={{ "--lightbox-portrait-ratio": portraitFrameRatio }} className="lightbox-scroll relative h-full w-full overflow-y-auto overscroll-contain px-2 pt-18 pb-8 md:px-16 md:py-12">
         <div className="flex min-h-full items-start justify-center md:items-center">
           <div
             key={img.id}

@@ -123,3 +123,13 @@ test("empty and one-column grids remain valid; SSR preserves the base layout", (
     assert.throws(() => getGalleryColumnSpans(images, value), /positive integer/);
   }
 });
+
+test("a square following this mixed-span fixture occupies two columns at each grid width", () => {
+  const fixture = [wide, portrait, portrait, wide, portrait, portrait, portrait, portrait, square];
+  for (const columns of [2, 3, 4, 5, 6]) {
+    const spans = getGalleryColumnSpans(fixture, columns);
+    assert.equal(spans.at(-1), 2);
+    assert.equal(spans.length, fixture.length);
+    assert.ok(spans.every((span) => span === 1 || span === 2));
+  }
+});

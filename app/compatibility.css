@@ -1,0 +1,90 @@
+/* Capability fallbacks only. Modern browsers keep the original styles and
+   motion declarations in gallery.css, navigation.css and globals.css. */
+@supports not (height: 1cqw) {
+  /* Percentage padding uses the card width and preserves the same row height
+     for both spans, including a row made entirely of wide photographs. */
+  .gallery-card > .gallery-reveal {
+    position: relative;
+    height: 0;
+    padding-top: calc(100% * 4 / 3);
+  }
+  .gallery-card-wide > .gallery-reveal {
+    padding-top: calc((100% - var(--gallery-gap)) * 2 / 3);
+  }
+  .gallery-reveal > .gallery-card-button {
+    position: absolute;
+    inset: 0;
+  }
+  .gallery-card-caption { padding: clamp(12px, 7%, 24px); }
+  .gallery-caption h3 { font-size: clamp(14px, 2vw, 22px); }
+}
+
+@supports not (height: 1dvh) {
+  .nav-expander, .nav-panel { max-height: calc(100vh - var(--nav-height)); }
+  .site-header[data-expanded="true"] .nav-expander {
+    height: min(var(--panel-height), calc(100vh - var(--nav-height)));
+  }
+  @media (max-width: 833px) {
+    .mobile-panel, .site-header[data-mobile-open="true"] .nav-expander {
+      height: calc(100vh - var(--nav-height));
+    }
+  }
+}
+
+/* Resolve container and viewport support independently: some browsers have
+   dynamic viewport units but no container units, or the other way around. */
+@supports (not (height: 1cqw)) or (not (height: 1dvh)) {
+  .lightbox-scroll {
+    --compat-lightbox-width: calc(100vw - 16px);
+    --compat-viewport-height: 100vh;
+    --lightbox-portrait-height: calc(var(--compat-lightbox-width) / var(--lightbox-portrait-ratio));
+  }
+  .lightbox-square-content { --lightbox-image-height: var(--compat-lightbox-width); }
+  .lightbox-landscape-content { --lightbox-image-height: calc(var(--compat-lightbox-width) * 2 / 3); }
+  .lightbox-portrait-content, .lightbox-stacked-content {
+    padding-top: max(0px, calc((var(--compat-viewport-height) - 104px - var(--lightbox-image-height) - 24px - var(--lightbox-caption-reserve)) / 2));
+  }
+  /* An internal scrollbar can make the available width smaller than 100vw. */
+  .lightbox-photo-portrait > img:not([aria-hidden]) { max-width: 100%; }
+
+  @media (min-width: 768px) {
+    .lightbox-scroll {
+      --compat-lightbox-width: calc(100vw - 128px);
+      --lightbox-portrait-height: min(calc(var(--compat-viewport-height) * .82), calc((min(1152px, var(--compat-lightbox-width)) - var(--lightbox-portrait-gap) - 288px) / var(--lightbox-portrait-ratio)));
+    }
+    .lightbox-portrait-content, .lightbox-stacked-content { padding-top: 0; }
+    .lightbox-stacked-content {
+      --lightbox-image-height: max(0px, calc(var(--lightbox-portrait-height) - 24px - var(--lightbox-caption-reserve)));
+    }
+  }
+  @supports (height: 1cqw) {
+    .lightbox-scroll { --compat-lightbox-width: 100cqw; }
+  }
+  @supports (height: 1dvh) {
+    .lightbox-scroll { --compat-viewport-height: 100dvh; }
+  }
+}
+
+@supports not (translate: 0) {
+  @media (min-width: 768px) {
+    .image-lightbox [aria-label="Photo navigation"] { transform: translateY(-50%); }
+  }
+}
+
+@supports not (color: color-mix(in srgb, white, transparent)) {
+  .image-lightbox [class~="text-white/70"] { color: rgb(255 255 255 / 70%); }
+  .image-lightbox .lightbox-control { color: rgb(255 255 255 / 75%); }
+  .image-lightbox .lightbox-control:hover { color: #ffffff; }
+}
+
+@supports not (color: oklch(1 0 0)) {
+  :root {
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-neutral-400: #a3a3a3;
+  }
+}
+
+@supports not (height: 1svh) {
+  .not-found-page { min-height: 100vh; }
+}

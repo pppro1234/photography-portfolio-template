@@ -118,3 +118,20 @@ test("responsive source candidates include small thumbnails; only lazy images re
     }
   }
 });
+
+test("color sequence groups similar colors without editing their source order", () => {
+  const entries = [
+    { id: 1, appearance: appearance(0, 0, 0) },
+    { id: 2, appearance: appearance(200, 30, 30), group: "red" },
+    { id: 3, appearance: appearance(30, 30, 200) },
+    { id: 4, appearance: appearance(205, 35, 35), group: "red" },
+    { id: 5, appearance: appearance(30, 200, 30) },
+    { id: 6, appearance: appearance(210, 40, 40), group: "red" },
+  ];
+  const original = structuredClone(entries);
+  const sorted = sortGalleryImages(entries, "color");
+  const positions = sorted.flatMap((image, index) => image.group === "red" ? [index] : []);
+  assert.equal(positions.length, 3);
+  assert.equal(Math.max(...positions) - Math.min(...positions), 2);
+  assert.deepEqual(entries, original);
+});

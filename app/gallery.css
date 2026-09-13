@@ -162,6 +162,73 @@
   .lightbox-scroll { --lightbox-portrait-gap: 56px; }
 }
 
+.lightbox-capture {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 16px;
+  margin: 26px auto 0;
+  padding-top: 22px;
+  border-top: 1px solid rgb(255 255 255 / 16%);
+  font-family: var(--font-sans);
+  text-align: left;
+}
+.lightbox-capture dt {
+  margin-bottom: 6px;
+  color: rgb(255 255 255 / 58%);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.lightbox-capture dd {
+  margin: 0;
+  color: rgb(255 255 255 / 85%);
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.55;
+  letter-spacing: .015em;
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow-wrap: anywhere;
+}
+.lightbox-capture-gear {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 12px;
+}
+.lightbox-capture-gear dt { margin-bottom: 0; }
+.lightbox-capture-setting dd { white-space: nowrap; }
+.lightbox-scroll[data-has-capture="true"] { --lightbox-caption-reserve: 260px; }
+
+@media (min-width: 768px) {
+  .lightbox-scroll[data-has-capture="true"] { --lightbox-caption-reserve: 91.5px; }
+  /* Camera details flow with the caption. Never trap them in the short,
+     independently scrolling caption used by photographs without EXIF, or
+     shrink the photograph just to make room for the extra information. */
+  .lightbox-scroll[data-has-capture="true"] .lightbox-stacked-content,
+  .lightbox-scroll[data-has-capture="true"] .lightbox-portrait-content {
+    height: auto;
+    min-height: var(--lightbox-portrait-height);
+  }
+  .lightbox-scroll[data-has-capture="true"] .lightbox-stacked-content > .motion-blur-content {
+    max-height: none;
+    overflow-y: visible;
+  }
+  .lightbox-stacked-content .lightbox-capture {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px 32px;
+  }
+  .lightbox-stacked-content .lightbox-capture-gear {
+    display: block;
+    max-width: 280px;
+  }
+  .lightbox-stacked-content .lightbox-capture-gear dt { margin-bottom: 6px; }
+}
+
 .gallery-card[data-motion-active="true"] .gallery-photo {
   will-change: transform;
 }

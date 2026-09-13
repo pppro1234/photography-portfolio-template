@@ -2,6 +2,8 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readPhotograph } from "./lib/gallery-appearance.mjs";
+import { sanitizeGalleryFiles } from "./lib/gallery-metadata.mjs";
+import { readCaptureDetails } from "./lib/gallery-capture.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -75,6 +77,11 @@ const syncGallery = async () => {
     a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
   );
 
+  const metadata = await sanitizeGalleryFiles(files, { workRoot: rootDir });
+  console.log(`Metadata checked: ${metadata.scanned}. Cleaned: ${metadata.cleaned.length}.`);
+  for (const file of metadata.cleaned) console.log(`Cleaned: ${toPosixPath(path.relative(galleryDir, file))}`);
+  const captures = await readCaptureDetails(files);
+
   const imageItems = [];
   for (const filePath of files) {
     const relativePath = toPosixPath(path.relative(galleryDir, filePath));
@@ -93,6 +100,7 @@ const syncGallery = async () => {
       thumbPosition: previous?.thumbPosition || "center",
       isWide: width >= height,
       appearance,
+      ...(captures.get(filePath) ? { capture: captures.get(filePath) } : {}),
     });
   }
 
